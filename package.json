@@ -1,0 +1,26 @@
+{
+  "name": "redux-prim",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup src/index.js --format umd --name \"redux-prim\" --file dist/redux-prim.js",
+    "test": "node test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SijieCai/redux-prim.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SijieCai/redux-prim/issues"
+  },
+  "homepage": "https://github.com/SijieCai/redux-prim#readme",
+  "dependencies": {
+    "lodash": "^4.17.10"
+  },
+  "devDependencies": {
+    "rollup": "^0.63.4"
+  }
+}
