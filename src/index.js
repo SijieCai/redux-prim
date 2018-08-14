@@ -1,11 +1,11 @@
 var _extendReducers = {
-  initState: ({ action, getDefaultState }) => {
+  initState({ action, getDefaultState }) {
     return Object.assign({}, getDefaultState(), action.payload, { '@@uid': action.uid });
   },
-  setState: ({ state, action }) => {
+  setState({ state, action }) {
     return Object.assign({}, state, action.payload);
   },
-  mergeState: ({ state, action }) => {
+  mergeState({ state, action }) {
     return Object.keys(action.payload).reduce(function (s, key) {
       if (typeof s[key] === 'object' && typeof action.payload[key] === 'object') {
         s[key] = Object.assign({}, s[key], action.payload[key]);
@@ -14,6 +14,9 @@ var _extendReducers = {
       }
       return s;
     }, Object.assign({}, state));
+  },
+  primAction({ state, action, reducer }) {
+    return reducer(state, action);
   }
 }
 
@@ -23,7 +26,7 @@ export var extendReducers = function (namedReducers) {
 
 function stringify(x) {
   var type = Object.prototype.toString.call(x).replace('object ', '');
-  if (['[Number]', '[Boolean]', '[String]'].indexOf(type) > 0) {
+  if (['[Number]', '[Boolean]', '[Undefined]'].indexOf(type) > 0) {
     return x;
   }
   return type;
@@ -38,39 +41,40 @@ function querify(payload) {
   return payloadStr;
 }
 
-export var createPrimActions = function (baseName, uid, actionsCreator) {
-  if (typeof actionsCreator !== 'undefined') {
-    if (typeof actionsCreator !== 'function') {
-      throw new Error('Expected the actionsCreator to be a function.');
-    }
+export var createContractActions = function (baseName, actionsCreator) {
+  if (typeof actionsCreator !== 'function') {
+    throw new Error('Expected the actionsCreator to be a function.');
+  }
+  return function (uid, options) {
     if (typeof uid !== 'string' && typeof uid !== 'number') {
       throw new Error('Expected the uid to be a string or number.');
     }
-  }
-
-  if (typeof uid === 'function' && typeof actionsCreator === 'undefined') {
-    actionsCreator = uid;
-    uid = '';
-  }
-
-  function createPrimAction(name) {
-    return function (payload) {
-      return {
-        type: `@prim/${baseName}/${uid}/${name}?${querify(payload)}`,
-        payload
+    function createPrimAction(name) {
+      return function (payload) {
+        return {
+          type: `@prim/${baseName}/${uid}/${name}?${querify(payload)}`,
+          payload
+        }
       }
     }
-  }
 
-  var primActions = Object.keys(_extendReducers).reduce(function (actions, key) {
-    actions[key] = createPrimAction(key);
-    return actions;
-  }, {})
-  return actionsCreator(primActions);
+    var primActions = Object.keys(_extendReducers).reduce(function (actions, key) {
+      actions[key] = createPrimAction(key);
+      return actions;
+    }, {})
+    primActions.primAction = function ({ type, payload, ...rest }) {
+      return {
+        type: `@prim/${baseName}/${uid}/${type}`,
+        payload,
+        ...rest
+      }
+    }
+    return actionsCreator(primActions, options);
+  }
 }
 
 function toPrimAction(baseName, action) {
-  var regexp = new RegExp(`^@prim/${baseName}/(.*)/(${Object.keys(_extendReducers).join('|')})[?]?(.*)$`);
+  var regexp = new RegExp(`^@prim/${baseName}/(.*)/([^?]+)[?]?(.*)$`);
   var match = regexp.exec(action.type);
   if (match) {
     return {
@@ -83,7 +87,7 @@ function toPrimAction(baseName, action) {
   return null;
 }
 
-export var createPrimReducer = function (baseName, getDefaultState, reducer) {
+export var createContractReducer = function (baseName, getDefaultState, reducer) {
   return function (state = getDefaultState(), action) {
 
     var primAction = toPrimAction(baseName, action);
@@ -93,10 +97,11 @@ export var createPrimReducer = function (baseName, getDefaultState, reducer) {
         return state;
       }
       var matchedReducer = _extendReducers[primAction.type];
+      var param = { state, action: primAction, getDefaultState, reducer };
       if (matchedReducer) {
-        return matchedReducer({ state, action: primAction, getDefaultState });
+        return matchedReducer(param);
       }
-      throw new Error('unknwon primAction');
+      return _extendReducers.primAction(param)
     }
     return reducer(state, action);
   }
