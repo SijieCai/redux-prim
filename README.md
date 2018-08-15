@@ -1,5 +1,20 @@
 # redux-prim
-redux-prim 弱化了 action 和 reducer ，加强了 action creator。帮助在 react + redux 更好的进行数据契约设计实现代码复用。即使项目里面不需要抽象和复用，使用 redux-prim 也能简化 action 和 reducer，在某些场景非常方便。
+redux-prim 是一个 redux 的辅助开发工具，其完全遵循 redux 架构的约定：
+
+- state 是不可变的单一对象树。
+- 用 action 描述意图。
+- 用纯函数 reducer 实现 state 的修改。
+
+在此基础上，通过引入命名空间，并把 action 和 reducer 抽象为
+
+- 数据初始值（getDefaultState）
+- 数据的修改（updaters纯函数）
+
+这种抽象更符合人脑对数据的理解，并且支持自定义 updater 实现代码复用。在这个抽象层之下，redux-prim 会按照 redux 的方式来实现，我们仍然可以使用 redux 生态里的工具链。
+
+## 设计初衷
+
+redux-prim 并不是为了解决 redux boilerplate 的问题而设计。起初在一个 react + redux 架构大型项目下，我们实现了大量相似页面的场景抽象和代码复用，我把这套最佳实践总结为 **数据契约式设计**，redux-prim 就是其演化过程的产物。
 
 ## 安装
 
@@ -20,13 +35,13 @@ var todoActions = createPrimActions('todo', ({ setState }) => {
 
 combineReducer({
 	todo: createPrimReducer('todo', function getDefaultState() {
-		// return default state
+		return { todoVisible: false };
 	})
 })
 
 ```
 
-你可能会奇怪不需要 middleware 配置，甚至不需要定义 action 甚至 reducer。这正是 redux-prim 希望强调的，开发者可以更加聚焦到数据的意义和变化，而不是用考虑 action，reducer 已经数据不变性。
+不需要 middleware 配置，不需要定义 action 和 reducer。
 
 ## Namespace
 例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。
