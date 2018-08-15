@@ -12,9 +12,8 @@ redux-prim 是一个 redux 的辅助开发工具，其完全遵循 redux 架构�
 
 这种抽象更符合人脑对数据的理解，并且支持自定义 updater 实现代码复用。在这个抽象层之下，redux-prim 会按照 redux 的方式来实现，我们仍然可以使用 redux 生态里的工具链。
 
-## 设计初衷
+更多的，redux-prim 提供接口帮助实现**数据契约式设计**。
 
-redux-prim 并不是为了解决 redux boilerplate 的问题而设计。起初在一个 react + redux 架构大型项目下，我们实现了大量相似页面的场景抽象和代码复用，我把这套最佳实践总结为 **数据契约式设计**，redux-prim 就是其演化过程的产物。
 
 ## 安装
 
@@ -47,7 +46,7 @@ combineReducer({
 例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。
 
 ## Updater
-Updater 是 redux-prim 最重要的特性，他本意是用来表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 setState 就是一个内置的 updater，你会发现它生成一个符合 SFA 的 action，并由对应的 reducer 函数处理。
+Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 `setState` 就是一个内置的 `updater`，你会发现它生成一个符合 `SFA` 的 `action`，并由对应的 `reducer` 函数处理。
 
 ``` javascript
 {
@@ -55,19 +54,19 @@ Updater 是 redux-prim 最重要的特性，他本意是用来表示对数据操
     payload: { todoVisible: true }
 }
 ```
-这个 action 会被对应的内置 reducer 捕获并处理，总共有三个数据操作函数：
+这个 action 会被对应的内置 reducer 捕获并处理，redux-prim 内置三个 updaters：
 
-- initState(state), 对应处理函数为：
+- initState(state), 对应 reducer 实现：
 ``` javascript
     return Object.assign({}, getDefaultState(), state);
 ```
 
-- setState(changes), 对应处理函数为：
+- setState(changes), 对应 reducer 实现：
 ``` javascript
     return Object.assign({}, state, changes);
 ```
 
-- mergeState(changes), equal to
+- mergeState(changes), 对应 reducer 实现
 ``` javascript
 return Object.keys(changes).reduce(function (s, key) {
 	if (Object.prototype.toString.call(s[key]) === "[object Object]" &&
@@ -81,7 +80,7 @@ return Object.keys(changes).reduce(function (s, key) {
 ```
 
 ## extendUpdaters 
-我们非常谨慎的提供 Updater 及其实现，并允许用户在项目里自定义 `updater`：
+我们非常谨慎的提供 Updater 及其实现，并允许自定义 `updater` 甚至覆盖默认实现，下面代码实现名为`pushArray`的 updater:
 
 ``` javascript
 import { extendUpdaters } = from 'reduxe-prim';
@@ -92,7 +91,7 @@ extendUpdaters({
 	}
 })
 ```
-这样我们就可以有了 4 个 `updater`，`initState`, `setState`, `mergeState`, `pushArray`.
+使用 `pushArray`：
 
 ``` javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
@@ -112,10 +111,10 @@ combineReducer({
 })
 ```
 
-如果我们打印这个 action 会看到如下类似：
+打印 pushArray 返回的 action 可以看到：
 ``` javascript
 {
-    type: '@prim/todo/pushArray?name=[String]&value=[Object]
+    type: '@prim/todo/pushArray?name=[String]&value=[Object]',
     payload: { name: 'todoList', value: todo }
 }
 ```
@@ -130,7 +129,7 @@ extendUpdaters({
 ```
 
 ## action 和 reducer
-有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实心。 我们仍然可以定义 action type 并实现 reducer，参考如下写法：
+有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实现。 我们仍然可以是用 redux 的方式实现，参考如下写法：
 
 ``` javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
@@ -138,7 +137,7 @@ import { createPrimActions, createPrimReducer } from 'redux-prim';
 var todoActions = createPrimActions('todo', ({ primAction /*, setState*/ }) => {
 	return {
 		complexAction(data) {
-		    // 用 primAction 包裹，才能在下面的 reducer 里面捕获
+			 // 用 primAction 包裹，才能在下面的 reducer 里面捕获
 			return primAction({
 				type: 'complex-action',
 				payload: data
@@ -159,30 +158,32 @@ combineReducer({
 可以发现 action 签名如下
 ``` javascript
 {
-    type: '@prim/todo/complex-action
+    type: '@prim/todo/complex-action',
     payload: data
 }
 ```
 
-## 使用middleware
-redux-prim 与大部分 redux-middleware 并没有冲突，action 的创建也符合 SFA 规范。假如我们配置了 redux-thunk 中间件，可以正常在 createPrimAction 里面使用：
+## redux 生态
+redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 createPrimAction 里面使用：
 ``` javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
 	loadPage(todo) {
 		return async (dispatch, getState) => {
-		    var pageState = await loadPageState();
+			var pageState = await loadPageState();
 			dispatch(initState(pageState));
 		}
 	}
 }));
 ```
 
-# 数据契约设计
-redux-prim 最开始是 redux 架构下一套最佳实践的工具，这套最佳实践最后演变成为数据契约设计，类似 bertrond myer 在 OOP 下的契约式设计，数据契约设计可以认为是在 FP 下实现抽象设计的方法。
+# 设计初衷
+redux-prim 并不是为了解决 redux boilerplate 的问题而设计。起初在一个 react + redux 架构大型项目下，我们实现了大量相似页面的场景抽象和代码复用，经过大量的实践和演变，我把这套最佳实践总结为 **数据契约式设计**，redux-prim 就是其演化过程的产物。
+
+## 数据契约设计
+最开始我觉得这种设计包含数据驱动，以及一种契约的理念，后来我发现 Bertrond Myer 在 OOP 也提出了契约式设计并获得广泛认可。让我惊喜的是最终两者惊人的契合，尤其体现在设计原则上。数据契约设计可以认为是在 FP 下实现抽象设计的方法。
 
 ## 何时使用
-在一些大型的云系统、CMS、ERP 等，我们会遇到大量相似的场景，比如表格或者表单页。需要把这些页面的抽象并复用代码实现，同时遵循 react +  redux 的模式。
-
+在云平台系统、CMS、ERP 等，我们会遇到大量相似的场景，比如表格页或者表单页，这些页面设计风格和体验基本一致。需要把这些页面的抽象并复用代码实现，同时遵循 react +  redux 的模式。
 
 
 ## 解决了什么问题
@@ -336,10 +337,19 @@ User extends Component {
 	}
 }
 ```
-## 最后
-契约的概念的特点强调了设计是一种权衡，设计者应该牺牲哪些通用性，来获取哪些利益。
 
-通常在大型项目中破坏抽象的元凶就是无节制的添加功能或者说防御式兼容。而数据契约设计保护核心数据的功能和意义保持不变，迫使开发者在别的层面解决问题，降低了系统的耦合性，同时保护了抽象和已经复用的代码。这一点我在几个项目的实践中反复的被验证，印象深刻。
+## 其它方案和异同
+关于 redux 架构代码复用，社区里面有大量的分享和总结，最容易获取的是官方（其实就是 @Dan Abramov） 提出的 [reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic)，这里面强调复用 reducer。然而 reducer 是一个纯函数，无法处理 side effect 比如异步的问题，大部分逻辑被转移到 action creator，导致复用 reducer 效果非常有限。
+
+于是社区在此理论基础上提出增强 reducer 功能的方案比如 [redux-loop](https://github.com/redux-loop/redux-loop)，[redux-observable](https://redux-observable.js.org/)。redux-loop 有很多新的概念，redux-observable 背后是 rxjs 以及响应式编程。这种方案理论上我认为是可行的，沿着@Dan Abramov 大神指引的方向一路走，就是略有引虎拒狼的味道，学习曲线陡增，并引入了更多的 `boilerplate`。redux-prim 作者最开始还不是 Dan Abramov 的粉丝（后来知道他是 react-dnd 和 redux 之父后也转粉那是后来的事了），我并不认为 reducer 是抽象的唯一元素，而是把需要抽象的重复场景所有相关的模块（action，reducer，container等）通过契约的方式内聚起来，更多在设计上解决问题，而不是框架上（redux-prim 只有不到200 行代码的实现）。
+
+能基本消除 boilerplate 是让我真正愿意开源和推广 redux-prim 的原因，毕竟代码抽象很难复制传授，基本只能嫡传（跟着一起干项目才能领会），而且系统很容易就毁在一个小小的错误设计上。 在实现上，我也是后知后觉的发现社区里2016年就实现的 [redux-updeep](https://github.com/algolia/redux-updeep) 最接近 redux-prim，它使用了 updeep 这个库1️以不可变的方式合并任意的 payload，相当于在 redux-prim 基于 updeep 实现一个 updater，action 仍然需要自己约束实现。相比之下 redux-prim 有更良好的理论支撑，数据操作是一种抽象，updater 怎么实现按照各自的喜好，action 和 reducer 概念变得透明。
+
+
+## 最后
+契约的概念的特点强调了设计是一种权衡，比如：设计者应该牺牲哪些通用性，来获取哪些利益。
+
+通常在大型项目中破坏抽象的元凶就是无节制的添加功能或者说防御式兼容。而数据契约设计进场让开发者重新审视这些变动，并尝试在别的层面解决问题。结果是降低了系统的耦合性，同时保护了抽象和已经复用的代码。这一点我在几个项目的实践中体会深刻。
 
 同样的场景如果不用 redux，不用数据契约设计，是否也能达到类似的抽象效果？答案是肯定的，其实我就是用 OOP 的方式实现之后，探索如何在 FP 这一种范式里面达到类似的效果。要说最终的区别就是，OOP 的方式更加好理解，而 FP 的方式提供了更多的可预测性和组合性。这目前只是我的一种感觉，或许可以用数学来证明？
 
@@ -361,7 +371,7 @@ User extends Component {
 
 关于数据契约设计，我会在中国首届React开发者大会上进行分享，后续会有更加系统的文章发出。
 
-最后在啰嗦几句，虽然目前这套理论还不完善，希望看到大家更多的参与进来，尤其是FP的大牛们，帮助这种设计理论的演化，哪怕是推翻并出现更好的方法论。
+最后在啰嗦几句，虽然目前这套理论还不完善，希望看到大家更多的参与进来，帮助这种设计理论的演化，哪怕是推翻并出现更好的方法论。
 
 
 
