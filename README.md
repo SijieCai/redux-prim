@@ -341,7 +341,7 @@ User extends Component {
 ## 其它方案和异同
 关于 redux 架构代码复用，社区里面有大量的分享和总结，最容易获取的是官方（其实就是 @Dan Abramov） 提出的 [reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic)，这里面强调复用 reducer。然而 reducer 是一个纯函数，无法处理 side effect 比如异步的问题，大部分逻辑被转移到 action creator，导致复用 reducer 效果非常有限。
 
-于是社区在此理论基础上提出增强 reducer 功能的方案比如 [redux-loop](https://github.com/redux-loop/redux-loop)，[redux-observable](https://redux-observable.js.org/)。redux-loop 有很多新的概念，redux-observable 背后是 rxjs 以及响应式编程。这种方案理论上我认为是可行的，沿着@Dan Abramov 大神指引的方向一路走，就是略有引虎拒狼的味道，学习曲线陡增，并引入了更多的 `boilerplate`。redux-prim 作者最开始还不是 Dan Abramov 的粉丝（后来知道他是 react-dnd 和 redux 之父后也转粉那是后来的事了），我并不认为 reducer 是抽象的唯一元素，而是把需要抽象的重复场景所有相关的模块（action，reducer，container等）通过契约的方式内聚起来，更多在设计上解决问题，而不是框架上（redux-prim 只有不到200 行代码的实现）。
+于是社区在此理论基础上提出增强 reducer 功能的方案比如 [redux-loop](https://github.com/redux-loop/redux-loop)，[redux-observable](https://redux-observable.js.org/)。redux-loop 有很多新的概念，redux-observable 背后是 rxjs 以及响应式编程。这种方案理论上我认为是可行的，沿着@Dan Abramov 大神指引的方向一路走，就是略有引虎拒狼的味道，学习曲线陡增，并引入了更多的 `boilerplate`。redux-prim 作者最开始还不是 Dan Abramov 的粉丝（知道他是 react-dnd 和 redux 之父后也转粉那是后来的事了），我并不认为 reducer 是抽象的唯一元素，而是把需要抽象的重复场景所有相关的模块（action，reducer，container等）通过契约的方式内聚起来，更多在设计上解决问题，而不是框架上（redux-prim 只有不到200 行代码的实现）。
 
 能基本消除 boilerplate 是让我真正愿意开源和推广 redux-prim 的原因，毕竟代码抽象很难复制传授，基本只能嫡传（跟着一起干项目才能领会），而且系统很容易就毁在一个小小的错误设计上。 在实现上，我也是后知后觉的发现社区里2016年就实现的 [redux-updeep](https://github.com/algolia/redux-updeep) 最接近 redux-prim，它使用了 updeep 这个库1️以不可变的方式合并任意的 payload，相当于在 redux-prim 基于 updeep 实现一个 updater，action 仍然需要自己约束实现。相比之下 redux-prim 有更良好的理论支撑，数据操作是一种抽象，updater 怎么实现按照各自的喜好，action 和 reducer 概念变得透明。
 
