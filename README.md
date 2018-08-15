@@ -25,17 +25,17 @@ npm i redux-prim
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ setState }) => {
-	return {
-		setTodoVisibility(todoVisible) {
-			return setState({ todoVisible });
-		}
-	}
+  return {
+    setTodoVisibility(todoVisible) {
+      return setState({ todoVisible });
+    }
+  }
 } );
 
 combineReducer({
-	todo: createPrimReducer('todo', function getDefaultState() {
-		return { todoVisible: false };
-	})
+  todo: createPrimReducer('todo', function getDefaultState() {
+    return { todoVisible: false };
+  })
 })
 
 ```
@@ -69,13 +69,13 @@ Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽
 - mergeState(changes), 对应 reducer 实现
 ``` javascript
 return Object.keys(changes).reduce(function (s, key) {
-	if (Object.prototype.toString.call(s[key]) === "[object Object]" &&
-		Object.prototype.toString.call(changes[key]) === "[object Object]") {
-		s[key] = Object.assign({}, s[key], changes[key]);
-	} else {
-		s[key] = changes;
-	}
-	return s;
+  if (Object.prototype.toString.call(s[key]) === "[object Object]" &&
+    Object.prototype.toString.call(changes[key]) === "[object Object]") {
+    s[key] = Object.assign({}, s[key], changes[key]);
+  } else {
+    s[key] = changes;
+  }
+  return s;
 }, Object.assign({}, state));
 ```
 
@@ -85,10 +85,10 @@ return Object.keys(changes).reduce(function (s, key) {
 ``` javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
-	pushArray({ state, action, /*getDefaultState*/ }) {
-		var { name, value } = action.payload // for simplicity
-		return {...state, [name]: [...state[name], value] }
-	}
+  pushArray({ state, action, /*getDefaultState*/ }) {
+    var { name, value } = action.payload // for simplicity
+    return {...state, [name]: [...state[name], value] }
+  }
 })
 ```
 使用 `pushArray`：
@@ -105,8 +105,8 @@ var todoActions = createPrimActions('todo', ({ pushArray }) => {
 combineReducer({
     todo: createPrimReducer('todo', function getDefaultState() {
         return {
-			todoList: []
-		}
+      todoList: []
+    }
     })
 })
 ```
@@ -122,9 +122,9 @@ combineReducer({
 ``` javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
-	setState({ state, action }) { /* use immutable.js */ },
-	mergeState({ state, action }) { /* use immutable.js */ }
-	//...
+  setState({ state, action }) { /* use immutable.js */ },
+  mergeState({ state, action }) { /* use immutable.js */ }
+  //...
 })
 ```
 
@@ -135,24 +135,24 @@ extendUpdaters({
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ primAction /*, setState*/ }) => {
-	return {
-		complexAction(data) {
-			 // 用 primAction 包裹，才能在下面的 reducer 里面捕获
-			return primAction({
-				type: 'complex-action',
-				payload: data
-			})
-		}
-	}
+  return {
+    complexAction(data) {
+       // 用 primAction 包裹，才能在下面的 reducer 里面捕获
+      return primAction({
+        type: 'complex-action',
+        payload: data
+      })
+    }
+  }
 } );
 
 combineReducer({
-	todo: createPrimReducer('todo', getDefaultState, function reducer(state, action) {
-		if(action.type === 'complex-action') {
-			// return a new state
-		}
-		return state;
-	})
+  todo: createPrimReducer('todo', getDefaultState, function reducer(state, action) {
+    if(action.type === 'complex-action') {
+      // return a new state
+    }
+    return state;
+  })
 })
 ```
 可以发现 action 签名如下
@@ -167,12 +167,12 @@ combineReducer({
 redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 createPrimAction 里面使用：
 ``` javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
-	loadPage(todo) {
-		return async (dispatch, getState) => {
-			var pageState = await loadPageState();
-			dispatch(initState(pageState));
-		}
-	}
+  loadPage(todo) {
+    return async (dispatch, getState) => {
+      var pageState = await loadPageState();
+      dispatch(initState(pageState));
+    }
+  }
 }));
 ```
 
@@ -203,9 +203,9 @@ redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 stat
 ``` JavaScript
   const app = combineReducers({
      todo: todoReducer,
-	 user: userReducer,
-	 admin: adminReducer,
-	 order: orderReducer
+   user: userReducer,
+   admin: adminReducer,
+   order: orderReducer
   })
 ```
 这种方式会导致功能一致的 container 组件在不同页面的重复定义，因为 connect 的数据域不一致。所以我们制定一个契约（契约强调如果不实现责任，就获取没有利益），所有类似的页面使用同一个数据域 page，并且同一时间这个数据域只有一个场景在使用：
@@ -213,26 +213,26 @@ redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 stat
 ### createContractReducer
 
 ``` JavaScript
-	import { createContractReducer } from 'reduc-prim';
-	const app = combineReducers({
-		page:  createContractReducer('page', getDefaultState)
-	})
+  import { createContractReducer } from 'reduc-prim';
+  const app = combineReducers({
+    page:  createContractReducer('page', getDefaultState)
+  })
 ```
 我们继续制定契约，约定没个页面都有
-	- list：数组，根据不同页面，可以是任意的对象。
-	- criteria：一个代表 `key` `value` 的搜索条件，不同页面可以随意设置这个对象
-	- pagination：分页, 包含 `page`, `pageSize` 和 `total`。
+  - list：数组，根据不同页面，可以是任意的对象。
+  - criteria：一个代表 `key` `value` 的搜索条件，不同页面可以随意设置这个对象
+  - pagination：分页, 包含 `page`, `pageSize` 和 `total`。
 
 
 ``` JavaScript
 function getDefaultState() {
-	return  {
-		// an array of domain object
-		list: [], 
-		// key value pairs use to do build api query
-		criteria: {},
-		pagination: { page, pageSize, total }
-	}
+  return  {
+    // an array of domain object
+    list: [], 
+    // key value pairs use to do build api query
+    criteria: {},
+    pagination: { page, pageSize, total }
+  }
 }
 ```
 因为有了契约，没个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
@@ -247,8 +247,8 @@ const pageContractActions =
   createContractActions('page', ({ primAction, initState, setState, mergeState }, { getListApi }) => {
     var actions = {
       initState(state) {
-	    // 页面组件在 componentDidMount 必须调用 initState，除了提供各自
-		// 的初始状态，更重要是给 page 数据域施加一个排它锁。
+      // 页面组件在 componentDidMount 必须调用 initState，除了提供各自
+    // 的初始状态，更重要是给 page 数据域施加一个排它锁。
         return initState(state);
       }
       setCriteria(criteria) {
@@ -288,27 +288,27 @@ var orderActions = pageContractActions ('order', { getListApi: api.getOrderList 
 这里面我们对 getListApi 制定了契约，规定其函数签名为：
 ``` javascript
     function getListApi(
-		criteria: Object, 
-		pagination: {page: number, pageSize: number}
+    criteria: Object, 
+    pagination: {page: number, pageSize: number}
     ): Promise<{
-		list: Array,
-		page: number,
-		pageSize: number
-		}>
+    list: Array,
+    page: number,
+    pageSize: number
+    }>
 ```
 `问题：如果我们项目的后端接口不一致怎么办：
-	可以用高阶函数做适配，否则就不要接入这套实现。
+  可以用高阶函数做适配，否则就不要接入这套实现。
 `
 ### 实现通用容器组件
 现在我们可以针对契约数据 `list` 实现一个通用的表格组件：
 ``` JavaScript
 connect(
-	state=>({list: state.page.list})
+  state=>({list: state.page.list})
 )
 class PageTable extends React.Component {
-	static propsType = {
-		howToRender: PropTypes.any.isRequired
-	}
+  static propsType = {
+    howToRender: PropTypes.any.isRequired
+  }
 }
 ```
 这个容器组件只是知道怎么获取数据，但是对数据怎么显示一无所知，所以需要在场景页面配置如何显示：
@@ -317,24 +317,24 @@ class PageTable extends React.Component {
 import PageTable from './PageTable';
 import UserActions from './UserActions';
 connect(
-	()=>({}) // 只是为了 dispach
+  ()=>({}) // 只是为了 dispach
 )
 User extends Component {
-	componentDidMount() {
-		this.dispatch(UserActions.initState());
-	}
-	renderColumns = [
-		{
-			renderHeader = () => '名字',
-			renderContent = item => item.name
-		}, {
-			renderHeader = () => '性别',
-			renderContent = item => <Gender value={item.gender}/>
-		}
-	]
-	render() {
-		return <PageTable howToRender={this.renderColumns}/>
-	}
+  componentDidMount() {
+    this.dispatch(UserActions.initState());
+  }
+  renderColumns = [
+    {
+      renderHeader = () => '名字',
+      renderContent = item => item.name
+    }, {
+      renderHeader = () => '性别',
+      renderContent = item => <Gender value={item.gender}/>
+    }
+  ]
+  render() {
+    return <PageTable howToRender={this.renderColumns}/>
+  }
 }
 ```
 
@@ -356,16 +356,16 @@ User extends Component {
 这里我们列出 Bertrand Meyer 在 OOP 契约式设计几个原则和数据契约设计对比，会发现有惊人相似：
 
 -  Command–query separation (CQS)
-	对比 redux 的 action 和 reducer。 
+  对比 redux 的 action 和 reducer。 
 
 -  Uniform access principle (UAP) 
-	里面提出派生数据的概念
-	
+  里面提出派生数据的概念
+  
 -  Single Choice Principle (SCP)
-	单一数据源，dry
-	
+  单一数据源，dry
+  
 -  Open/Closed Principle (OCP)
-	开发封闭原则
+  开发封闭原则
 
 虽然类似，但是编程范式都不一样，因为抽象从数据开始，所以我命名为`数据契约设计`，这是为了沟通的方便，如果被更多人认可，慢慢就会被接受和提出，目前先不要喷我造新词。
 
