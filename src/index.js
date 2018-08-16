@@ -1,6 +1,6 @@
-var _extendReducers = {
+const _updaters = {
   initState({ action, getDefaultState }) {
-    return Object.assign({}, getDefaultState(), action.payload, { '@@uid': action.uid });
+    return Object.assign({}, getDefaultState(), action.payload);
   },
   setState({ state, action }) {
     return Object.assign({}, state, action.payload);
@@ -14,14 +14,13 @@ var _extendReducers = {
       }
       return s;
     }, Object.assign({}, state));
-  },
-  primAction({ state, action, reducer }) {
-    return reducer(state, action);
   }
 }
 
-export var extendReducers = function (namedReducers) {
-  Object.assign(_extendReducers, namedReducers);
+var _actionTypePrefix = '';
+
+export var extendUpdaters = function (namedUpdaters) {
+  Object.assign(_updaters, namedUpdaters);
 }
 
 function stringify(x) {
@@ -32,7 +31,10 @@ function stringify(x) {
   return type;
 }
 
-function querify(payload) {
+function querify(payload, intend) {
+  if(intend) {
+    return intend;
+  }
   var payloadStr = stringify(payload);
   if (payloadStr === '[Object]') {
     return Object.keys(payload).map(key => `${key}=${stringify(payload[key])}`).join('&');
@@ -41,68 +43,120 @@ function querify(payload) {
   return payloadStr;
 }
 
-export var createContractActions = function (baseName, actionsCreator) {
-  if (typeof actionsCreator !== 'function') {
-    throw new Error('Expected the actionsCreator to be a function.');
-  }
-  return function (uid, options) {
-    if (typeof uid !== 'string' && typeof uid !== 'number') {
-      throw new Error('Expected the uid to be a string or number.');
-    }
-    function createPrimAction(name) {
-      return function (payload) {
-        return {
-          type: `@prim/${baseName}/${uid}/${name}?${querify(payload)}`,
-          payload
-        }
-      }
-    }
+function updaterActionCreators(namespace, signer) {
 
-    var primActions = Object.keys(_extendReducers).reduce(function (actions, key) {
-      actions[key] = createPrimAction(key);
-      return actions;
-    }, {})
-    primActions.primAction = function ({ type, payload, ...rest }) {
+  function getMeta(updaterName) {
+    var m = {
+      isPrimAction: true,
+      namespace,
+      signer
+    }
+    if (updaterName) {
+      m.updaterName = updaterName;
+    }
+    return m;
+  }
+  var ns = namespace;
+  if (signer) {
+    ns = `${namespace}/${signer}`;
+  }
+  function updaterActionCreator(name) {
+
+    return function (payload, intend) {
       return {
-        type: `@prim/${baseName}/${uid}/${type}`,
+        type: `${_actionTypePrefix}/${ns}/${name}/?${querify(payload, intend)}`,
         payload,
-        ...rest
+        meta: getMeta(name)
       }
     }
-    return actionsCreator(primActions, options);
   }
-}
 
-function toPrimAction(baseName, action) {
-  var regexp = new RegExp(`^@prim/${baseName}/(.*)/([^?]+)[?]?(.*)$`);
-  var match = regexp.exec(action.type);
-  if (match) {
-    return {
-      uid: match[1],
-      type: match[2],
-      payload: action.payload,
-      meta: action
+  return {
+    ...Object.keys(_updaters).reduce(function (ret, updaterName) {
+      ret[updaterName] = updaterActionCreator(updaterName);
+      return ret;
+    }, {}),
+    primAction(action) {
+      return {
+        type: `${_actionTypePrefix}/${ns}/${action.type}`,
+        payload: action,
+        meta: getMeta()
+      }
     }
   }
-  return null;
 }
 
-export var createContractReducer = function (baseName, getDefaultState, reducer) {
+export function createContractActions(namespace, creator) {
+  if (typeof creator !== 'function') {
+    throw new Error('Expected the creator to be a function.');
+  }
+  return function (signer, ...args) {
+    if (typeof signer !== 'string' && typeof signer !== 'number') {
+      throw new Error('Expected the signer to be a string or number.');
+    }
+    return creator(updaterActionCreators(namespace, signer), ...args);
+  }
+}
+
+export function createPrimActions(namespace, creator) {
+  if (typeof creator !== 'function') {
+    throw new Error('Expected the creator to be a function.');
+  }
+  return creator(updaterActionCreators(namespace));
+}
+
+function isMatchedAction(action, namespace) {
+  var meta = action.meta;
+  if (!meta || Object.prototype.toString(meta) !== '[object Object]') { return false; }
+  return meta.isPrimAction && (meta.namespace === namespace);
+}
+
+export function createContractReducer(namespace, getDefaultState, reducer) {
   return function (state = getDefaultState(), action) {
+    if (!isMatchedAction(action, namespace)) return state;
 
-    var primAction = toPrimAction(baseName, action);
+    var { updaterName, signer } = action.meta;
 
-    if (primAction) {
-      if (state['@@uid'] && primAction.type !== 'initState' && state['@@uid'] !== primAction.uid) {
+    if (updaterName) {
+      if (state['@signer'] && updaterName !== 'initState' && state['@signer'] !== signer) {
         return state;
       }
-      var matchedReducer = _extendReducers[primAction.type];
-      var param = { state, action: primAction, getDefaultState, reducer };
-      if (matchedReducer) {
-        return matchedReducer(param);
+      if (updaterName === 'initState') {
+        action.payload = Object.assign({ '@signer': signer }, action.payload);
       }
-      return _extendReducers.primAction(param)
+      return _updaters[updaterName]({
+        state,
+        action,
+        getDefaultState
+      });
     }
-    return reducer(state, action);
+
+    if (!reducer) {
+      throw new Error(`reducer function is not defined in createContractReducer("${namespace}", getDefaultState, reducer)`);
+    }
+    return reducer(state, action.payload, getDefaultState);
   }
 }
+
+export function createPrimReducer(namespace, getDefaultState, reducer) {
+  return function (state = getDefaultState(), action) {
+    if (!isMatchedAction(action, namespace)) return state;
+
+    var { updaterName } = action.meta;
+
+    if (updaterName) {
+      return _updaters[updaterName]({
+        state,
+        action,
+        getDefaultState
+      });
+    }
+    if (!reducer) {
+      throw new Error(`reducer function is not defined in createPrimReducer("${namespace}", getDefaultState, reducer)`);
+    }
+    return reducer(state, action.payload, getDefaultState);
+  }
+}
+
+
+

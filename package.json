@@ -2,7 +2,8 @@
   "name": "redux-prim",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/redux-prim.js",
+  "module": "index.js",
   "scripts": {
     "build": "rollup src/index.js --format umd --name \"redux-prim\" --file dist/redux-prim.js",
     "test": "node test/index.js"
@@ -16,6 +17,11 @@
   "bugs": {
     "url": "https://github.com/SijieCai/redux-prim/issues"
   },
+  "files": [
+    "dist/**/*.js",
+    "index.js",
+    "README.md"
+  ],
   "homepage": "https://github.com/SijieCai/redux-prim#readme",
   "dependencies": {
     "lodash": "^4.17.10"
