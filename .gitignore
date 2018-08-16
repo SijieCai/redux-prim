@@ -1,5 +1,7 @@
+.DS_Store
+*.log
 node_modules
 dist
-output
-# OSX Files
-.DS_Store
+lib
+es
+coverage
