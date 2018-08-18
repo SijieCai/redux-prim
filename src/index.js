@@ -94,8 +94,8 @@ export function createContractActions(namespace, creator) {
     throw new Error('Expected the creator to be a function.')
   }
   return function(signer, ...args) {
-    if (typeof signer !== 'string' && typeof signer !== 'number') {
-      throw new Error('Expected the signer to be a string or number.')
+    if (typeof signer !== 'string' && typeof signer !== 'number' && typeof signer !== 'symbol') {
+      throw new Error('Expected the signer to be a string , number or symbol.')
     }
     return creator(updaterActionCreators(namespace, signer), ...args)
   }
