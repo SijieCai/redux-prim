@@ -1,27 +1,29 @@
 # redux-prim
+
 Redux-prim is a secondary development tool for redux that fully follows the conventions of the redux architecture:
 
-- The state is an immutable object tree within a single store.
+- The state is an immutable object tree within a single store.
 - Describe intentions with *actions*.
 - Modify the state with the pure function *reducer*.
 
 In addition, abstract *action* and *reducer* by introducing a namespace as:
 
-- 数据初始值（getDefaultState）
-- 数据的修改（updaters纯函数）
+- Initial value of data（getDefaultState）
+- Data modification（updaters纯函数）
 
-这种抽象更符合人脑对数据的理解，并且支持自定义 updater 实现代码复用。在这个抽象层之下，redux-prim 会按照 redux 的方式来实现，我们仍然可以使用 redux 生态里的工具链。
+This abstraction is more in line with the human brain's understanding of the data, and supports custom *updater* to achieve code reuse. Under the abstraction layer, redux-prim is implemented as redux, so we can still use the toolchain in the redux ecosystem.
 
-更多的，redux-prim 提供接口帮助实现**数据契约式设计**。
+Redux-prim also provides interfaces for **data contract design**.
 
-
-## 安装
+## Install
 
 ```shell
 npm i redux-prim
 ```
-## 简单例子
-``` javascript
+
+## Simple example
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ setState }) => {
@@ -40,34 +42,40 @@ combineReducer({
 
 ```
 
-不需要 middleware 配置，不需要定义 action 和 reducer。
+No middleware configuration is required, no action and reducer need to be defined.
 
 ## Namespace
-例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。
+
+In the example, the first parameter **todo** of `createPrimActions` and `createPrimReducer` is required, it's a namespace. The actions and reducers of the same namespace are matched. It is the basis for redux-prim to implement other features.
 
 ## Updater
-Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 `setState` 就是一个内置的 `updater`，你会发现它生成一个符合 `SFA` 的 `action`，并由对应的 `reducer` 函数处理。
 
-``` javascript
+Updater is the most important feature of redux-prim. These functions are not related to the business, but represent an abstraction of the data operations, so that we can quickly implement business logic on this abstraction. For example, the `setState` of the above example is a built-in `updater`, and you will find that it generates a `action` that conforms to `SFA` and is processed by the corresponding `reducer` function.
+
+```javascript
 {
     type: '@prim/todo/setState?todoVisible=true'
     payload: { todoVisible: true }
 }
 ```
-这个 action 会被对应的内置 reducer 捕获并处理，redux-prim 内置三个 updaters：
 
-- initState(state), 对应 reducer 实现：
-``` javascript
+This action is captured and processed by the corresponding built-in reducer, and redux-prim has three built-in updaters:
+
+- initState(state), corresponding to the reducer implementation:
+
+```javascript
     return Object.assign({}, getDefaultState(), state);
 ```
 
-- setState(changes), 对应 reducer 实现：
-``` javascript
+- setState(changes), corresponding to the reducer implementation:
+
+```javascript
     return Object.assign({}, state, changes);
 ```
 
-- mergeState(changes), 对应 reducer 实现
-``` javascript
+- mergeState(changes), corresponding to the reducer implementation:
+
+```javascript
 return Object.keys(changes).reduce(function (s, key) {
   if (Object.prototype.toString.call(s[key]) === "[object Object]" &&
     Object.prototype.toString.call(changes[key]) === "[object Object]") {
@@ -80,9 +88,10 @@ return Object.keys(changes).reduce(function (s, key) {
 ```
 
 ## extendUpdaters
-我们非常谨慎的提供 Updater 及其实现，并允许自定义 `updater` 甚至覆盖默认实现，下面代码实现名为`pushArray`的 updater:
 
-``` javascript
+We are very cautious about providing Updater and its implementation, and allowing custom `updater` to override the default implementation. The following code implements an updater named `pushArray`:
+
+```javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
   pushArray({ state, action, /*getDefaultState*/ }) {
@@ -91,9 +100,10 @@ extendUpdaters({
   }
 })
 ```
-使用 `pushArray`：
 
-``` javascript
+Use `pushArray`：
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 var todoActions = createPrimActions('todo', ({ pushArray }) => {
     return {
@@ -111,15 +121,18 @@ combineReducer({
 })
 ```
 
-打印 pushArray 返回的 action 可以看到：
-``` javascript
+Print the action returned by pushArray :
+
+```javascript
 {
     type: '@prim/todo/pushArray?name=[String]&value=[Object]',
     payload: { name: 'todoList', value: todo }
 }
 ```
-刚才提到，Updater 本身是数据操作的抽象，我们甚至可以覆盖内置 `updater` 并基于 Immutable.js 重写。
-``` javascript
+
+As mentioned earlier, the Updater itself is an abstraction of data manipulation. We can even override the built-in `updater` and rewrite it based on Immutable.js.
+
+```javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
   setState({ state, action }) { /* use immutable.js */ },
@@ -128,16 +141,17 @@ extendUpdaters({
 })
 ```
 
-## action 和 reducer
-有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实现。 我们仍然可以是用 redux 的方式实现，参考如下写法：
+## action and reducer
 
-``` javascript
+Some complex data operations related to the business are not suitable for implementation with `extendUpdaters`. We can still do this using redux, refer to the following:
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ primAction /*, setState*/ }) => {
   return {
     complexAction(data) {
-       // 用 primAction 包裹，才能在下面的 reducer 里面捕获
+      // wrapped with primAction to capture in the reducer below
       return primAction({
         type: 'complex-action',
         payload: data
@@ -155,17 +169,21 @@ combineReducer({
   })
 })
 ```
-可以发现 action 签名如下
-``` javascript
+
+You can find the action signature as follows :
+
+```javascript
 {
     type: '@prim/todo/complex-action',
     payload: data
 }
 ```
 
-## redux 生态
-redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 createPrimAction 里面使用：
-``` javascript
+## Redux ecology
+
+Redux-prim is essentially a redux architecture. Actions are created in accordance with the `SFA` specification to ensure compatibility with most middleware. If redux-thunk middleware is configured, it can be used normally in `createPrimAction` :
+
+```javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
   loadPage(todo) {
     return async (dispatch, getState) => {
@@ -176,55 +194,67 @@ var todoActions = createPrimActions('todo', ({ initState }) => ({
 }));
 ```
 
-# 设计初衷
-redux-prim 并不是为了解决 redux boilerplate 的问题而设计。起初在一个 react + redux 架构大型项目下，我们实现了大量相似页面的场景抽象和代码复用，经过大量的实践和演变，我把这套最佳实践总结为 **数据契约式设计**，redux-prim 就是其演化过程的产物。
+# Original design intention
 
-## 数据契约设计
-最开始我觉得这种设计包含数据驱动，以及一种契约的理念，后来我发现 Bertrond Myer 在 OOP 也提出了契约式设计并获得广泛认可。让我惊喜的是最终两者惊人的契合，尤其体现在设计原则上。数据契约设计可以认为是在 FP 下实现抽象设计的方法。
+Redux-prim is not designed to resolve the problem of redux boilerplate. At first, under a large project of react + redux architecture, we implemented a large number of scene abstraction and code reuse of similar pages. After a lot of practice and evolution, I summarized this set of best practices into ** data contract design**. Redux-prim is the product of its evolution.
 
-## 何时使用
-在云平台系统、CMS、ERP 等，我们会遇到大量相似的场景，比如表格页或者表单页，这些页面设计风格和体验基本一致。需要把这些页面的抽象并复用代码实现，同时遵循 react +  redux 的模式。
+## Data contract design
 
+At first I thought that this design contained data-driven and a contractual idea. Later I found that Bertrond Myer also proposed contractual design and was widely recognized at OOP. What surprised me was the amazing fit of the two, especially in the design principle. Data contract design can be thought of as a way to implement abstract design under FP.
 
-## 解决了什么问题
-redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 state 是不可变的单一对象树，state 的修改必须通过 dispatch 一个 action 来声明意图，并通过纯函数 reducer 返回新的 state 来达到修改的目的。这样可以让应用更可预测，同时更好支持热重载，时间旅行和服务端渲染等功能。但是带来的问题也很明显：
+## When to use
 
-- **过多的模式代码**
+In cloud platform systems, CMS, ERP, etc. We will encounter a lot of similar scenes, such as table pages or form pages, which are basically the same in design style and experience. You need to abstract and reuse the code for these pages, while following the pattern of react + redux.
 
-在一个拥有几十上百个列表增删改查页的应用中，假设一个页面需要10+ actions，1个reducer 以及若干的容器组件，我们需要实现维护数千个甚至更多的 actions 和 actionCreator，数百个 reducer，以及更多的容器组件（容器组件通常会细分已获得更高的性能）。使用 redux-prim 这样的页面不管多少，只需要与一个页面差不多甚至更少的 actions，reducer 和容器组件就能完成。大大增加的开发速度和维护成本。
+## What problem has been solved?
 
-## 代码实现步骤
-一个比较典型的页面如下（截图自 antd-pro）：
+Redux is a library that manages state through action and reducer. It specifies that state is an immutable single object tree. The state modification must declare the intent by dispatch an action, and return the new state through the pure function reducer to achieve the purpose of modification. This makes the app more predictable and better supports hot reload, time travel and server-side rendering. But the problems that come with it are also obvious:
+
+- **Too much mode code**
+
+In an app with hundreds of curd list pages, assuming that a page requires 10+ actions, 1 reducer, and several container components, we need to implement thousands or even more actions and actionCreator. Hundreds of reducers, as well as more container components (container components are usually subdivided for higher performance). With redux-prim, no matter how many pages, only need one page or even fewer actions, reducer and container components. Significantly increased development speed and maintenance costs.
+
+## Code implementation steps
+
+A typical page is as follows (screenshot from antd-pro):
+
 ![](http://p406.qhimgs4.com/t01958b0e04e22a2fb1.png)
-页面比如用户，订单，地址等大致类似,我们暂定这种场景叫 page。要实现一个 page 数据契约，首先：
 
-### 抽象 state 的共性
-在系统中我们有许多类似的页面，比如 todo， user，admin，order 等。一般在redux 我们会把页面的数据划分到不同的域（data domains）。比如：
-``` JavaScript
-  const app = combineReducers({
-     todo: todoReducer,
-   user: userReducer,
-   admin: adminReducer,
-   order: orderReducer
-  })
+For example, users, orders, and addresses are roughly similar. We tentatively call this page. To implement a page data contract, first:
+
+
+
+### Abstract state
+
+We have many similar pages in the system, such as todo, user, admin, order, etc. Usually in redux we will divide the data of the page into different data domains. such as:
+
+```JavaScript
+const app = combineReducers({
+  todo: todoReducer,
+  user: userReducer,
+  admin: adminReducer,
+  order: orderReducer
+})
 ```
-这种方式会导致功能一致的 container 组件在不同页面的重复定义，因为 connect 的数据域不一致。所以我们制定一个契约（契约强调如果不实现责任，就获取没有利益），所有类似的页面使用同一个数据域 page，并且同一时间这个数据域只有一个场景在使用：
+
+This approach results in duplicate definitions of functionally consistent container components on different pages because the data domains of connect are inconsistent. So we make a contract (the contract emphasizes that if we don't fulfill the responsibility, we get no benefit), all similar pages use the same data domain page, and at the same time only one scene can use this data domain:
 
 ### createContractReducer
 
-``` JavaScript
+```JavaScript
   import { createContractReducer } from 'reduc-prim';
   const app = combineReducers({
     page:  createContractReducer('page', getDefaultState)
   })
 ```
-我们继续制定契约，约定没个页面都有
-  - list：数组，根据不同页面，可以是任意的对象。
-  - criteria：一个代表 `key` `value` 的搜索条件，不同页面可以随意设置这个对象
-  - pagination：分页, 包含 `page`, `pageSize` 和 `total`。
 
+We continue to develop a contract that stipulates that every page has
 
-``` JavaScript
+- list：array, according to different pages, it can be any object.
+- criteria：a search condition containing `key` `value`, which can be set freely on different pages.
+- pagination：including `page`, `pageSize` and `total`.
+
+```JavaScript
 function getDefaultState() {
   return  {
     // an array of domain object
@@ -235,20 +265,21 @@ function getDefaultState() {
   }
 }
 ```
-因为有了契约，没个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
 
-由于 action 和 reducer 以及被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的事 action creator：
+Because of the contract, the name,the structure, and data domain of each function are fixed, and code abstraction becomes easier and more thorough. 
+
+Since `action` and `reducer` are weakened by `redux-prim`, the behavior of our next abstract contract data corresponds to `action creator`:
 
 ### createContractActions
 
-``` JavaScript
+```JavaScript
 import { createContractActions } from 'redux-prim';
 const pageContractActions =
   createContractActions('page', ({ primAction, initState, setState, mergeState }, { getListApi }) => {
     var actions = {
       initState(state) {
-      // 页面组件在 componentDidMount 必须调用 initState，除了提供各自
-    // 的初始状态，更重要是给 page 数据域施加一个排它锁。
+        // The page component must call the initState in the componentDidMount. 
+        // In addition to providing their own initial state, it is more important to apply a row lock to the page data domain.
         return initState(state);
       }
       setCriteria(criteria) {
@@ -275,8 +306,10 @@ const pageContractActions =
     return actions;
   }
 ```
-因为每一个页面获取列表数据的接口都不一样，所以 pageContractActions 是一个高阶函数，它接受两个参数，name 和 options。
-``` javascript
+
+Because the interface for each page to get list data are different, `pageContractActions` is a high-order function that accepts two parameters, name and options.
+
+```javascript
 // todo actions
 var todoActions = pageContractActions ('todo', { getListApi: api.getTodoList });
 
@@ -285,23 +318,28 @@ var orderActions = pageContractActions ('order', { getListApi: api.getOrderList 
 
 ```
 
-这里面我们对 getListApi 制定了契约，规定其函数签名为：
-``` javascript
-    function getListApi(
+Here we make a contract for `getListApi` that specifies its function signature as:
+
+```javascript
+  function getListApi(
     criteria: Object,
     pagination: {page: number, pageSize: number}
-    ): Promise<{
+  ): Promise<{
     list: Array,
     page: number,
     pageSize: number
-    }>
+  }>
 ```
-`问题：如果我们项目的后端接口不一致怎么办：
-  可以用高阶函数做适配，否则就不要接入这套实现。
-`
-### 实现通用容器组件
-现在我们可以针对契约数据 `list` 实现一个通用的表格组件：
-``` JavaScript
+
+`Question: What if the back-end interfaces of our projects are inconsistent:`
+
+`You can use high-order functions as adapter, otherwise you shouldn't access this implementation.`
+
+### Implement common Container Components
+
+Now we can implement a common table component for the contract data `list`:
+
+```JavaScript
 connect(
   state=>({list: state.page.list})
 )
@@ -311,15 +349,17 @@ class PageTable extends React.Component {
   }
 }
 ```
-这个容器组件只是知道怎么获取数据，但是对数据怎么显示一无所知，所以需要在场景页面配置如何显示：
-``` JavaScript
-// User 页面
+
+This container component just knows how to get the data, but knows nothing about how the data is rendered, so it needs to be configured how to render it on the scene page :
+
+```JavaScript
+// User page
 import PageTable from './PageTable';
 import UserActions from './UserActions';
 connect(
-  ()=>({}) // 只是为了 dispach
+  ()=>({}) // only for dispach
 )
-User extends Component {
+class User extends Component {
   componentDidMount() {
     this.dispatch(UserActions.initState());
   }
