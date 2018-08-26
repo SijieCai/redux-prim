@@ -9,7 +9,7 @@ Redux-prim is a secondary development tool for redux that fully follows the conv
 In addition, abstract *action* and *reducer* by introducing a namespace as:
 
 - Initial value of data（getDefaultState）
-- Data modification（updaters纯函数）
+- Data modification（updaters pure function）
 
 This abstraction is more in line with the human brain's understanding of the data, and supports custom *updater* to achieve code reuse. Under the abstraction layer, redux-prim is implemented as redux, so we can still use the toolchain in the redux ecosystem.
 
