@@ -129,7 +129,7 @@ extendUpdaters({
 ```
 
 ## action 和 reducer
-有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实现。 我们仍然可以是用 redux 的方式实现，参考如下写法：
+有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实现。 我们仍然可以使用 redux 的方式实现，参考如下写法：
 
 ``` javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
@@ -137,7 +137,7 @@ import { createPrimActions, createPrimReducer } from 'redux-prim';
 var todoActions = createPrimActions('todo', ({ primAction /*, setState*/ }) => {
   return {
     complexAction(data) {
-       // 用 primAction 包裹，才能在下面的 reducer 里面捕获
+      // 用 primAction 包裹，才能在下面的 reducer 里面捕获
       return primAction({
         type: 'complex-action',
         payload: data
@@ -164,7 +164,7 @@ combineReducer({
 ```
 
 ## redux 生态
-redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 createPrimAction 里面使用：
+redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 `createPrimAction` 里面使用：
 ``` javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
   loadPage(todo) {
@@ -191,7 +191,7 @@ redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 stat
 
 - **过多的模式代码**
 
-在一个拥有几十上百个列表增删改查页的应用中，假设一个页面需要10+ actions，1个reducer 以及若干的容器组件，我们需要实现维护数千个甚至更多的 actions 和 actionCreator，数百个 reducer，以及更多的容器组件（容器组件通常会细分已获得更高的性能）。使用 redux-prim 这样的页面不管多少，只需要与一个页面差不多甚至更少的 actions，reducer 和容器组件就能完成。大大增加的开发速度和维护成本。
+在一个拥有几十上百个列表增删改查页的应用中，假设一个页面需要10+ actions，1个reducer 以及若干的容器组件，我们需要实现维护数千个甚至更多的 actions 和 actionCreator，数百个 reducer，以及更多的容器组件（容器组件通常会细分以获得更高的性能）。使用 redux-prim 这样的页面不管多少，只需要与一个页面差不多甚至更少的 actions，reducer 和容器组件就能完成。大大增加的开发速度和维护成本。
 
 ## 代码实现步骤
 一个比较典型的页面如下（截图自 antd-pro）：
@@ -237,7 +237,7 @@ function getDefaultState() {
 ```
 因为有了契约，每个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
 
-由于 action 和 reducer 以及被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的是 action creator：
+由于 action 和 reducer 已经被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的是 action creator：
  
 ### createContractActions
 
