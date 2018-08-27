@@ -218,7 +218,7 @@ redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 stat
     page:  createContractReducer('page', getDefaultState)
   })
 ```
-我们继续制定契约，约定没个页面都有
+我们继续制定契约，约定每个页面都有
   - list：数组，根据不同页面，可以是任意的对象。
   - criteria：一个代表 `key` `value` 的搜索条件，不同页面可以随意设置这个对象
   - pagination：分页, 包含 `page`, `pageSize` 和 `total`。
@@ -235,9 +235,9 @@ function getDefaultState() {
   }
 }
 ```
-因为有了契约，没个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
+因为有了契约，每个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
 
-由于 action 和 reducer 以及被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的事 action creator：
+由于 action 和 reducer 以及被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的是 action creator：
  
 ### createContractActions
 
@@ -248,7 +248,7 @@ const pageContractActions =
     var actions = {
       initState(state) {
       // 页面组件在 componentDidMount 必须调用 initState，除了提供各自
-    // 的初始状态，更重要是给 page 数据域施加一个排它锁。
+      // 的初始状态，更重要是给 page 数据域施加一个排它锁。
         return initState(state);
       }
       setCriteria(criteria) {
@@ -287,14 +287,14 @@ var orderActions = pageContractActions ('order', { getListApi: api.getOrderList 
 
 这里面我们对 getListApi 制定了契约，规定其函数签名为：
 ``` javascript
-    function getListApi(
+  function getListApi(
     criteria: Object, 
     pagination: {page: number, pageSize: number}
-    ): Promise<{
+  ): Promise<{
     list: Array,
     page: number,
     pageSize: number
-    }>
+  }>
 ```
 `问题：如果我们项目的后端接口不一致怎么办：
   可以用高阶函数做适配，否则就不要接入这套实现。
@@ -319,7 +319,7 @@ import UserActions from './UserActions';
 connect(
   ()=>({}) // 只是为了 dispach
 )
-User extends Component {
+class User extends Component {
   componentDidMount() {
     this.dispatch(UserActions.initState());
   }
