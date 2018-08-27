@@ -411,16 +411,3 @@ Although they are similar, the programming paradigm is different, because abstra
 Regarding data contract design, I will share it at the first React Developer Conference in China, and a more systematic article will be issued later.
 
 Finally, in a few words, although the current theory is still not perfect, I hope to see more people involved, to help the evolution of this design theory, even to overthrow it and propose a better methodology.
-
-
-
-
-
-
-
-
-
-
-
-
-
