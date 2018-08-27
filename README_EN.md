@@ -378,41 +378,39 @@ class User extends Component {
 }
 ```
 
-## 其它方案和异同
-关于 redux 架构代码复用，社区里面有大量的分享和总结，最容易获取的是官方（其实就是 @Dan Abramov） 提出的 [reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic)，这里面强调复用 reducer。然而 reducer 是一个纯函数，无法处理 side effect 比如异步的问题，大部分逻辑被转移到 action creator，导致复用 reducer 效果非常有限。
+## Other schemes and similarities/differences
+Regarding the reuse of redux architecture code, there is a lot of analysis and summary in the community. The most widely spread practice is officially proposed  (in fact, @Dan Abramov)[reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic), it emphasizes resuing the reducer. However, the reducer is a pure function that cannot handle side effects such as asynchronous problems. Most of the logic is transferred to the action creator, resulting in very limited reuse of the reducer.
 
-于是社区在此理论基础上提出增强 reducer 功能的方案比如 [redux-loop](https://github.com/redux-loop/redux-loop)，[redux-observable](https://redux-observable.js.org/)。redux-loop 有很多新的概念，redux-observable 背后是 rxjs 以及响应式编程。这种方案理论上我认为是可行的，沿着@Dan Abramov 大神指引的方向一路走，就是略有引虎拒狼的味道，学习曲线陡增，并引入了更多的 `boilerplate`。redux-prim 作者最开始还不是 Dan Abramov 的粉丝（知道他是 react-dnd 和 redux 之父后也转粉那是后来的事了），我并不认为 reducer 是抽象的唯一元素，而是把需要抽象的重复场景所有相关的模块（action，reducer，container等）通过契约的方式内聚起来，更多在设计上解决问题，而不是框架上（redux-prim 只有不到200 行代码的实现）。
+So the community proposed a scheme to enhance the reducer function based on this theory, such as [redux-loop](https://github.com/redux-loop/redux-loop), [redux-observable](https://redux-observable.js.org/). Redux-loop has many new concepts, behind redux-observable is rxjs and responsive programming. This kind of scheme is theoretically feasible, and along the direction of @Dan Abramov, I feel that in order to solve a complex problem, a more complicated mechanism is introduced, the learning curve is steeply increased, at the same time introduced more boilerplate. The redux-prim author was not originally a fan of Dan Abramov (until the author knew he was the creator of react-dnd and redux), I don't think the reducer is the only element that can be abstracted, but the repetitive scenes that need abstraction. The related modules are cohesively contracted, and the problem should be solved more at the design level than on the framework (redux-prim has less than 200 lines of code implementation).
 
-能基本消除 boilerplate 是让我真正愿意开源和推广 redux-prim 的原因，毕竟代码抽象很难复制传授，基本只能嫡传（跟着一起干项目才能领会），而且系统很容易就毁在一个小小的错误设计上。 在实现上，我也是后知后觉的发现社区里2016年就实现的 [redux-updeep](https://github.com/algolia/redux-updeep) 最接近 redux-prim，它使用了 updeep 这个库1️以不可变的方式合并任意的 payload，相当于在 redux-prim 基于 updeep 实现一个 updater，action 仍然需要自己约束实现。相比之下 redux-prim 有更良好的理论支撑，数据操作是一种抽象，updater 怎么实现按照各自的喜好，action 和 reducer 概念变得透明。
+The elimination of the boilerplate is the reason why I am willing to open source and promote redux-prim. After all, the code abstraction is difficult to copy and teach, and it can only be rumored (the people working together can understand), and the system is easily destroyed in a small misdesign. In terms of code implementation, I realized that the design concept of [redux-updeep](https://github.com/algolia/redux-updeep) that appeared in the developer community in 2016 is closest to redux-prim. It uses the updeep library to merge arbitrary payloads in an immutable way, which is equivalent to implementing an updater based on updeep in redux-prim. The action still needs to be implemented by the developer. In contrast, redux-prim has better theoretical support. Data manipulation is a set of abstract concepts. Users can implement updater according to their own preferences. The concept of Action and reducer becomes transparent.
 
+## At last
+The characteristics of the concept of contract emphasize that design is a process of trade-offs, such as: what versatility designers should sacrifice to gain benefits. 
 
-## 最后
-契约的概念的特点强调了设计是一种权衡，比如：设计者应该牺牲哪些通用性，来获取哪些利益。
+The reason for breaking abstractions in large projects is usually caused by uncontrolled add-ons or defensive compatibility. The data contract-based design philosophy allows developers to revisit these changes and try to solve problems at other levels. The result is reduced system coupling while protecting abstract and reusable code. I have a deep understanding of this in the practice of several projects.
 
-通常在大型项目中破坏抽象的元凶就是无节制的添加功能或者说防御式兼容。而数据契约设计进场让开发者重新审视这些变动，并尝试在别的层面解决问题。结果是降低了系统的耦合性，同时保护了抽象和已经复用的代码。这一点我在几个项目的实践中体会深刻。
+In the same scenario, if you don't use redux, don't use the data contract design pattern, can you achieve similar abstract effects? The answer is yes. In fact, after I implemented it in OOP, I explored how to achieve similar effects in the paradigm of functional programming. The final difference is that the OOP approach is better understood, and the FP approach provides more predictability and composition. This is just a feeling of mine, maybe it can be proved by mathematics?
 
-同样的场景如果不用 redux，不用数据契约设计，是否也能达到类似的抽象效果？答案是肯定的，其实我就是用 OOP 的方式实现之后，探索如何在 FP 这一种范式里面达到类似的效果。要说最终的区别就是，OOP 的方式更加好理解，而 FP 的方式提供了更多的可预测性和组合性。这目前只是我的一种感觉，或许可以用数学来证明？
-
-这里我们列出 Bertrand Meyer 在 OOP 契约式设计几个原则和数据契约设计对比，会发现有惊人相似：
+Here we list Bertrand Meyer's comparison of several principles of contractual design in object-oriented programming with data contract design, and find similar similarities:
 
 -  Command–query separation (CQS)
-    对比 redux 的 action 和 reducer。
+Compare redux's action and reducer.
 
 -  Uniform access principle (UAP)
-    里面提出派生数据的概念
+The concept of derived data
 
 -  Single Choice Principle (SCP)
-    单一数据源，dry
+Single data source, DRY
 
--  Open/Closed Principle (OCP)
-    开发封闭原则
+- Open/Closed Principle (OCP)
+Open/Closed 
 
-虽然类似，但是编程范式都不一样，因为抽象从数据开始，所以我命名为`数据契约设计`，这是为了沟通的方便，如果被更多人认可，慢慢就会被接受和提出，目前先不要喷我造新词。
+Although they are similar, the programming paradigm is different, because abstraction starts from the data, so I named it "data contract design", which is for the convenience of communication. If it is recognized by more people, it will gradually be accepted and proposed. Don't blame me for making new words.
 
-关于数据契约设计，我会在中国首届React开发者大会上进行分享，后续会有更加系统的文章发出。
+Regarding data contract design, I will share it at the first React Developer Conference in China, and a more systematic article will be issued later.
 
-最后在啰嗦几句，虽然目前这套理论还不完善，希望看到大家更多的参与进来，帮助这种设计理论的演化，哪怕是推翻并出现更好的方法论。
-
+Finally, in a few words, although the current theory is still not perfect, I hope to see more people involved, to help the evolution of this design theory, even to overthrow it and propose a better methodology.
 
 
 
