@@ -1,27 +1,27 @@
 # redux-prim
-redux-prim 是一个 redux 的辅助开发工具，其完全遵循 redux 架构的约定：
 
-- state 是不可变的单一对象树。
-- 用 action 描述意图。
-- 用纯函数 reducer 实现 state 的修改。
+redux-prim builds an abstract layer on top of redux, making state management as it should be:
+- The initial state: `getDefaultState`
+- State modification: `updaters` and `namespacing`
 
-在此基础上，通过引入命名空间，并把 action 和 reducer 抽象为
+The actions and reducers are greatly weaken, while under the abstraction layer, everything stays the same:
 
-- 数据初始值（getDefaultState）
-- 数据的修改（updaters纯函数）
+- State is a single immutable object tree.
+- *Actions* describe updates.
+- *Reducer* pure function to apply updates.
+- Redux's ecosystem
 
-这种抽象更符合人脑对数据的理解，并且支持自定义 updater 实现代码复用。在这个抽象层之下，redux-prim 会按照 redux 的方式来实现，我们仍然可以使用 redux 生态里的工具链。
+This abstraction is more in line with the human brain's understanding of the data, and supports custom *updater* to achieve code reuse. Redux-prim also provides interfaces for **data contract design**.
 
-更多的，redux-prim 提供接口帮助实现**数据契约式设计**。
-
-
-## 安装
+## Install
 
 ```shell
-npm i redux-prim 
+npm i redux-prim
 ```
-## 简单例子
-``` javascript
+
+## Simple example
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ setState }) => {
@@ -40,34 +40,40 @@ combineReducer({
 
 ```
 
-不需要 middleware 配置，不需要定义 action 和 reducer。
+No middleware configuration is required, no action and reducer need to be defined.
 
 ## Namespace
-例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。
+
+In the example, the first parameter **todo** of `createPrimActions` and `createPrimReducer` is required as a namespace. The actions and reducers of the same namespace are matched. It is the basis for redux-prim to implement other features.
 
 ## Updater
-Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 `setState` 就是一个内置的 `updater`，你会发现它生成一个符合 `SFA` 的 `action`，并由对应的 `reducer` 函数处理。
 
-``` javascript
+Updater is the most important feature of redux-prim. These functions should represent an abstraction of the data operations, so that we can quickly implement business logic on this abstraction. For example, the `setState` of the above example is a built-in `updater`, and you will find that it generates a `action` that conforms to `SFA` and is processed by the corresponding `reducer` function.
+
+```javascript
 {
     type: '@prim/todo/setState?todoVisible=true'
     payload: { todoVisible: true }
 }
 ```
-这个 action 会被对应的内置 reducer 捕获并处理，redux-prim 内置三个 updaters：
 
-- initState(state), 对应 reducer 实现：
-``` javascript
+This action is captured and processed by the corresponding built-in reducer, and redux-prim has three built-in updaters:
+
+- initState(state), corresponding to the reducer implementation:
+
+```javascript
     return Object.assign({}, getDefaultState(), state);
 ```
 
-- setState(changes), 对应 reducer 实现：
-``` javascript
+- setState(changes), corresponding to the reducer implementation:
+
+```javascript
     return Object.assign({}, state, changes);
 ```
 
-- mergeState(changes), 对应 reducer 实现
-``` javascript
+- mergeState(changes), corresponding to the reducer implementation:
+
+```javascript
 return Object.keys(changes).reduce(function (s, key) {
   if (Object.prototype.toString.call(s[key]) === "[object Object]" &&
     Object.prototype.toString.call(changes[key]) === "[object Object]") {
@@ -79,10 +85,11 @@ return Object.keys(changes).reduce(function (s, key) {
 }, Object.assign({}, state));
 ```
 
-## extendUpdaters 
-我们非常谨慎的提供 Updater 及其实现，并允许自定义 `updater` 甚至覆盖默认实现，下面代码实现名为`pushArray`的 updater:
+## extendUpdaters
 
-``` javascript
+We are very cautious about providing Updater and its implementation, and allowing custom `updater` to override the default implementation. The following code implements an updater named `pushArray`:
+
+```javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
   pushArray({ state, action, /*getDefaultState*/ }) {
@@ -91,9 +98,10 @@ extendUpdaters({
   }
 })
 ```
-使用 `pushArray`：
 
-``` javascript
+Use `pushArray`：
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 var todoActions = createPrimActions('todo', ({ pushArray }) => {
     return {
@@ -111,15 +119,18 @@ combineReducer({
 })
 ```
 
-打印 pushArray 返回的 action 可以看到：
-``` javascript
+Print the action returned by pushArray :
+
+```javascript
 {
     type: '@prim/todo/pushArray?name=[String]&value=[Object]',
     payload: { name: 'todoList', value: todo }
 }
 ```
-刚才提到，Updater 本身是数据操作的抽象，我们甚至可以覆盖内置 `updater` 并基于 Immutable.js 重写。
-``` javascript
+
+As mentioned earlier, the Updater itself is an abstraction of data manipulation. We can even override the built-in `updater` and rewrite it based on Immutable.js.
+
+```javascript
 import { extendUpdaters } = from 'reduxe-prim';
 extendUpdaters({
   setState({ state, action }) { /* use immutable.js */ },
@@ -128,16 +139,17 @@ extendUpdaters({
 })
 ```
 
-## action 和 reducer
-有些和业务相关的复杂数据操作，不适合用 `extendUpdaters` 实现。 我们仍然可以使用 redux 的方式实现，参考如下写法：
+## action and reducer
 
-``` javascript
+Some complex data operations related to the business are not suitable for implementation with `extendUpdaters`. We can still do this using redux, refer to the following:
+
+```javascript
 import { createPrimActions, createPrimReducer } from 'redux-prim';
 
 var todoActions = createPrimActions('todo', ({ primAction /*, setState*/ }) => {
   return {
     complexAction(data) {
-      // 用 primAction 包裹，才能在下面的 reducer 里面捕获
+      // wrapped with primAction to capture in the reducer below
       return primAction({
         type: 'complex-action',
         payload: data
@@ -155,17 +167,21 @@ combineReducer({
   })
 })
 ```
-可以发现 action 签名如下
-``` javascript
+
+You can find the action signature as follows :
+
+```javascript
 {
     type: '@prim/todo/complex-action',
     payload: data
 }
 ```
 
-## redux 生态
-redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 `createPrimAction` 里面使用：
-``` javascript
+## Redux ecosystem
+
+Redux-prim is essentially a redux architecture. Actions are created in accordance with the `SFA` specification to ensure compatibility with most middleware. If redux-thunk middleware is configured, it can be used normally in `createPrimAction` :
+
+```javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
   loadPage(todo) {
     return async (dispatch, getState) => {
@@ -176,79 +192,92 @@ var todoActions = createPrimActions('todo', ({ initState }) => ({
 }));
 ```
 
-# 设计初衷
-redux-prim 并不是为了解决 redux boilerplate 的问题而设计。起初在一个 react + redux 架构大型项目下，我们实现了大量相似页面的场景抽象和代码复用，经过大量的实践和演变，我把这套最佳实践总结为 **数据契约式设计**，redux-prim 就是其演化过程的产物。
+# Original design intention
 
-## 数据契约设计
-最开始我觉得这种设计包含数据驱动，以及一种契约的理念，后来我发现 Bertrond Myer 在 OOP 也提出了契约式设计并获得广泛认可。让我惊喜的是最终两者惊人的契合，尤其体现在设计原则上。数据契约设计可以认为是在 FP 下实现抽象设计的方法。
+Redux-prim is not designed to resolve the problem of redux boilerplate. We originally work on a lot of similar CRUD talbe pages using react + redux architecture, and try to abstract the scene to reuse most of redux code. After a few iterations and improvement, I summarized this set of best practices into ** data contract design**. Redux-prim is the product of its evolution.
 
-## 何时使用
-在云平台系统、CMS、ERP 等，我们会遇到大量相似的场景，比如表格页或者表单页，这些页面设计风格和体验基本一致。需要把这些页面的抽象并复用代码实现，同时遵循 react +  redux 的模式。
+## Data contract design
 
+At first I thought that this design's core should be data-driven and contract. and the idea of Design by Contract(DbC) by Bertrond Myer has been widely recognized at OOP. What surprised me was the amazing fit of the two, especially in the design principle. Data contract design can be thought of as a way to implement abstract design under FP.
 
-## 解决了什么问题
-redux 是一个通过 action 和 reducer 管理 state 的类库，它规定 state 是不可变的单一对象树，state 的修改必须通过 dispatch 一个 action 来声明意图，并通过纯函数 reducer 返回新的 state 来达到修改的目的。这样可以让应用更可预测，同时更好支持热重载，时间旅行和服务端渲染等功能。但是带来的问题也很明显：
+## When to use
 
-- **过多的模式代码**
+In cloud platform systems, CMS, ERP, etc. We will encounter a lot of similar scenes, such as table pages or form pages, which are basically the same in design style and experience. You need to abstract and reuse the code for these pages, while following the pattern of react + redux.
 
-在一个拥有几十上百个列表增删改查页的应用中，假设一个页面需要10+ actions，1个reducer 以及若干的容器组件，我们需要实现维护数千个甚至更多的 actions 和 actionCreator，数百个 reducer，以及更多的容器组件（容器组件通常会细分以获得更高的性能）。使用 redux-prim 这样的页面不管多少，只需要与一个页面差不多甚至更少的 actions，reducer 和容器组件就能完成。大大增加的开发速度和维护成本。
+## What problem has been solved?
 
-## 代码实现步骤
-一个比较典型的页面如下（截图自 antd-pro）：
+Redux is a library that manages state through action and reducer. It specifies that state is an immutable single object tree. The state modification must declare the intent by dispatch an action, and return the new state through the pure function reducer to achieve the purpose of modification. This makes the app more predictable and better supports hot reload, time travel and server-side rendering. But the problems that come with it are also obvious:
+
+- **Too much mode code**
+
+In an app with hundreds of curd list pages, assuming that a page requires 10+ actions, 1 reducer, and several container components, we need to implement thousands or even more actions and actionCreator. Hundreds of reducers, as well as more container components (container components are usually subdivided for higher performance). With redux-prim, no matter how many pages, only need one page or even fewer actions, reducer and container components. Significantly increased development speed and maintenance costs.
+
+## Code implementation steps
+
+A typical page is as follows (screenshot from antd-pro):
+
 ![](http://p406.qhimgs4.com/t01958b0e04e22a2fb1.png)
-页面比如用户，订单，地址等大致类似,我们暂定这种场景叫 page。要实现一个 page 数据契约，首先：
 
-### 抽象 state 的共性
-在系统中我们有许多类似的页面，比如 todo， user，admin，order 等。一般在redux 我们会把页面的数据划分到不同的域（data domains）。比如：
-``` JavaScript
-  const app = combineReducers({
-     todo: todoReducer,
-   user: userReducer,
-   admin: adminReducer,
-   order: orderReducer
-  })
+For example, users, orders, and addresses are roughly similar. We tentatively call this page. To implement a page data contract, first:
+
+
+
+### Abstract state
+
+We have many similar pages in the system, such as todo, user, admin, order, etc. Usually in redux we will divide the data of the page into different data domains. such as:
+
+```JavaScript
+const app = combineReducers({
+  todo: todoReducer,
+  user: userReducer,
+  admin: adminReducer,
+  order: orderReducer
+})
 ```
-这种方式会导致功能一致的 container 组件在不同页面的重复定义，因为 connect 的数据域不一致。所以我们制定一个契约（契约强调如果不实现责任，就获取没有利益），所有类似的页面使用同一个数据域 page，并且同一时间这个数据域只有一个场景在使用：
+
+This approach results in duplicate definitions of functionally consistent container components on different pages because the data domains of connect are inconsistent. So we make a contract (the contract emphasizes that if we don't fulfill the responsibility, we get no benefit), all similar pages use the same data domain page, and at the same time only one scene can use this data domain:
 
 ### createContractReducer
 
-``` JavaScript
+```JavaScript
   import { createContractReducer } from 'reduc-prim';
   const app = combineReducers({
     page:  createContractReducer('page', getDefaultState)
   })
 ```
-我们继续制定契约，约定每个页面都有
-  - list：数组，根据不同页面，可以是任意的对象。
-  - criteria：一个代表 `key` `value` 的搜索条件，不同页面可以随意设置这个对象
-  - pagination：分页, 包含 `page`, `pageSize` 和 `total`。
 
+We continue to develop a contract that stipulates that every page has
 
-``` JavaScript
+- list：array, according to different pages, it can be any object.
+- criteria：a search condition containing `key` `value`, which can be set freely on different pages.
+- pagination：including `page`, `pageSize` and `total`.
+
+```JavaScript
 function getDefaultState() {
   return  {
     // an array of domain object
-    list: [], 
+    list: [],
     // key value pairs use to do build api query
     criteria: {},
     pagination: { page, pageSize, total }
   }
 }
 ```
-因为有了契约，每个功能对应的数据的名称，结构以及所在数据域都被固定下来，代码抽象变得更加容易和彻底。
 
-由于 action 和 reducer 已经被 redux-prim 弱化，我们接下来抽象契约数据的行为，对应的是 action creator：
- 
+Because of the contract, the name,the structure, and data domain of each function are fixed, and code abstraction becomes easier and more thorough. 
+
+Since `action` and `reducer` are weakened by `redux-prim`, the behavior of our next abstract contract data corresponds to `action creator`:
+
 ### createContractActions
 
-``` JavaScript
+```JavaScript
 import { createContractActions } from 'redux-prim';
 const pageContractActions =
   createContractActions('page', ({ primAction, initState, setState, mergeState }, { getListApi }) => {
     var actions = {
       initState(state) {
-      // 页面组件在 componentDidMount 必须调用 initState，除了提供各自
-      // 的初始状态，更重要是给 page 数据域施加一个排它锁。
+        // The page component must call the initState in the componentDidMount. 
+        // In addition to providing their own initial state, it is more important to apply a row lock to the page data domain.
         return initState(state);
       }
       setCriteria(criteria) {
@@ -275,20 +304,23 @@ const pageContractActions =
     return actions;
   }
 ```
-因为每一个页面获取列表数据的接口都不一样，所以 pageContractActions 是一个高阶函数，它接受两个参数，name 和 options。
-``` javascript
+
+Because the interface for each page to get list data are different, `pageContractActions` is a high-order function that accepts two parameters, name and options.
+
+```javascript
 // todo actions
 var todoActions = pageContractActions ('todo', { getListApi: api.getTodoList });
 
 // orderActions
 var orderActions = pageContractActions ('order', { getListApi: api.getOrderList });
 
-``` 
+```
 
-这里面我们对 getListApi 制定了契约，规定其函数签名为：
-``` javascript
+Here we make a contract for `getListApi` that specifies its function signature as:
+
+```javascript
   function getListApi(
-    criteria: Object, 
+    criteria: Object,
     pagination: {page: number, pageSize: number}
   ): Promise<{
     list: Array,
@@ -296,12 +328,16 @@ var orderActions = pageContractActions ('order', { getListApi: api.getOrderList 
     pageSize: number
   }>
 ```
-`问题：如果我们项目的后端接口不一致怎么办：
-  可以用高阶函数做适配，否则就不要接入这套实现。
-`
-### 实现通用容器组件
-现在我们可以针对契约数据 `list` 实现一个通用的表格组件：
-``` JavaScript
+
+`Question: What if the back-end interfaces of our projects are inconsistent:`
+
+`You can use high-order functions as adapter, otherwise you shouldn't access this implementation.`
+
+### Implement common Container Components
+
+Now we can implement a common table component for the contract data `list`:
+
+```JavaScript
 connect(
   state=>({list: state.page.list})
 )
@@ -311,13 +347,15 @@ class PageTable extends React.Component {
   }
 }
 ```
-这个容器组件只是知道怎么获取数据，但是对数据怎么显示一无所知，所以需要在场景页面配置如何显示：
-``` JavaScript
-// User 页面
+
+This container component just knows how to get the data, but knows nothing about how the data is rendered, so it needs to be configured how to render it on the scene page :
+
+```JavaScript
+// User page
 import PageTable from './PageTable';
 import UserActions from './UserActions';
 connect(
-  ()=>({}) // 只是为了 dispach
+  ()=>({}) // only for dispach
 )
 class User extends Component {
   componentDidMount() {
@@ -325,10 +363,10 @@ class User extends Component {
   }
   renderColumns = [
     {
-      renderHeader = () => '名字',
+      renderHeader = () => 'Name',
       renderContent = item => item.name
     }, {
-      renderHeader = () => '性别',
+      renderHeader = () => 'Gender',
       renderContent = item => <Gender value={item.gender}/>
     }
   ]
@@ -338,51 +376,33 @@ class User extends Component {
 }
 ```
 
-## 其它方案和异同
-关于 redux 架构代码复用，社区里面有大量的分享和总结，最容易获取的是官方（其实就是 @Dan Abramov） 提出的 [reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic)，这里面强调复用 reducer。然而 reducer 是一个纯函数，无法处理 side effect 比如异步的问题，大部分逻辑被转移到 action creator，导致复用 reducer 效果非常有限。
+## Other schemes and similarities/differences
+Regarding the code reuse of redux, there is a lot of practice and summary in the community. The most widely spread practice is officially proposed (in fact, @Dan Abramov)[reusing reducer logic](https://redux.js.org/recipes/structuringreducers/reusingreducerlogic), it emphasizes resuing the reducer. However, the reducer is a pure function that cannot handle side effects such as asynchronous problems. Most of the logic is transferred to the action creator, resulting in very limited(or very hard to implement) code reuse of the reducer.
 
-于是社区在此理论基础上提出增强 reducer 功能的方案比如 [redux-loop](https://github.com/redux-loop/redux-loop)，[redux-observable](https://redux-observable.js.org/)。redux-loop 有很多新的概念，redux-observable 背后是 rxjs 以及响应式编程。这种方案理论上我认为是可行的，沿着@Dan Abramov 大神指引的方向一路走，就是略有引虎拒狼的味道，学习曲线陡增，并引入了更多的 `boilerplate`。redux-prim 作者最开始还不是 Dan Abramov 的粉丝（知道他是 react-dnd 和 redux 之父后也转粉那是后来的事了），我并不认为 reducer 是抽象的唯一元素，而是把需要抽象的重复场景所有相关的模块（action，reducer，container等）通过契约的方式内聚起来，更多在设计上解决问题，而不是框架上（redux-prim 只有不到200 行代码的实现）。
+So the community try to enhance the reducer based on this idea, such as [redux-loop](https://github.com/redux-loop/redux-loop), [redux-observable](https://redux-observable.js.org/). Redux-loop has many new concepts, behind redux-observable is rxjs and reative programming. This way is theoretically feasible. But I feel that in order to solve a complex problem, a more complicated mechanism is introduced, the learning curve is steeply increased, at the same time introduced more boilerplate. redux-prim, on the other hand, don't think the reducer is the only element that in a scene abstraction, but all elements that is involved such as state, action and reducer. These elements are cohesive and bounded by contract design. so at last, the problem should be solved more at the design level than on the framework (redux-prim has less than 200 lines of code implementation).
 
-能基本消除 boilerplate 是让我真正愿意开源和推广 redux-prim 的原因，毕竟代码抽象很难复制传授，基本只能嫡传（跟着一起干项目才能领会），而且系统很容易就毁在一个小小的错误设计上。 在实现上，我也是后知后觉的发现社区里2016年就实现的 [redux-updeep](https://github.com/algolia/redux-updeep) 最接近 redux-prim，它使用了 updeep 这个库1️以不可变的方式合并任意的 payload，相当于在 redux-prim 基于 updeep 实现一个 updater，action 仍然需要自己约束实现。相比之下 redux-prim 有更良好的理论支撑，数据操作是一种抽象，updater 怎么实现按照各自的喜好，action 和 reducer 概念变得透明。
+The elimination of the boilerplate is the reason why I open source redux-prim. After all, the code abstraction is difficult to copy and teach, and the system is easily destroyed in a small design error. In terms of code implementation, I realized that the design concept of [redux-updeep](https://github.com/algolia/redux-updeep) that appeared in the developer community in 2016 is closest to redux-prim. It uses the updeep library to merge arbitrary payloads in an immutable way, which is equivalent to implementing an updater based on updeep in redux-prim. The action still needs to be implemented by the developer. In contrast, redux-prim has better theoretical support. Data manipulation as an abstract layer regardless of implementation. Users can implement updater according to their own preferences. The concept of Action and reducer becomes transparent.
 
+## At last
+Design by Contract constantly remind you of that design is a trade-offs, such as: what versatility designers should sacrifice to gain benefits. 
 
-## 最后
-契约的概念的特点强调了设计是一种权衡，比如：设计者应该牺牲哪些通用性，来获取哪些利益。
+The reason for breaking abstractions in large projects is usually caused by uncontrolled feature extends or defensive adoptive. The data contract-based design philosophy allows developers to revisit these changes and try to solve problems at other levels. The result is reduced system coupling while protecting abstraction and reusable code. I have a deep understanding of this in the practice of several large projects.
 
-通常在大型项目中破坏抽象的元凶就是无节制的添加功能或者说防御式兼容。而数据契约设计进场让开发者重新审视这些变动，并尝试在别的层面解决问题。结果是降低了系统的耦合性，同时保护了抽象和已经复用的代码。这一点我在几个项目的实践中体会深刻。
+In the same scenario, if we don't use redux, and the data contract design pattern, can we achieve similar abstract effects? The answer is yes. In fact, I implemented it in OOP before I explored how to achieve in the paradigm of functional programming. The final difference is that the OOP approach is better understood, and the FP approach provides more predictability and composition. This is just a feeling of mine, maybe it can be proved by mathematics?
 
-同样的场景如果不用 redux，不用数据契约设计，是否也能达到类似的抽象效果？答案是肯定的，其实我就是用 OOP 的方式实现之后，探索如何在 FP 这一种范式里面达到类似的效果。要说最终的区别就是，OOP 的方式更加好理解，而 FP 的方式提供了更多的可预测性和组合性。这目前只是我的一种感觉，或许可以用数学来证明？
-
-这里我们列出 Bertrand Meyer 在 OOP 契约式设计几个原则和数据契约设计对比，会发现有惊人相似：
+Here we list Bertrand Meyer's comparison of several principles of contractual design in object-oriented programming with data contract design, and find similar similarities:
 
 -  Command–query separation (CQS)
-  对比 redux 的 action 和 reducer。 
+Compare redux's action and reducer.
 
--  Uniform access principle (UAP) 
-  里面提出派生数据的概念
-  
+-  Uniform access principle (UAP)
+The concept of derived data
+
 -  Single Choice Principle (SCP)
-  单一数据源，dry
-  
--  Open/Closed Principle (OCP)
-  开发封闭原则
+Single data source, DRY
 
-虽然类似，但是编程范式都不一样，因为抽象从数据开始，所以我命名为`数据契约设计`，这是为了沟通的方便，如果被更多人认可，慢慢就会被接受和提出，目前先不要喷我造新词。
+- Open/Closed Principle (OCP)
+Open/Closed 
 
-关于数据契约设计，我会在中国首届React开发者大会上进行分享，后续会有更加系统的文章发出。
-
-最后在啰嗦几句，虽然目前这套理论还不完善，希望看到大家更多的参与进来，帮助这种设计理论的演化，哪怕是推翻并出现更好的方法论。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Although they are similar, the programming paradigm is different, because abstraction starts from the data, so I named it "data contract design", which is for the convenience of communication. If it is recognized by more people, it will gradually be accepted and proposed. Not to much blame on making new words.
+ 
