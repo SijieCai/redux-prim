@@ -6,14 +6,15 @@ const _updaters = {
     return Object.assign({}, state, action.payload)
   },
   mergeState({ state, action }) {
-    return Object.keys(action.payload).reduce(function(s, key) {
+    const payload = action.payload
+    return Object.keys(payload).reduce(function(s, key) {
       if (
         typeof s[key] === 'object' &&
-        typeof action.payload[key] === 'object'
+        typeof payload[key] === 'object'
       ) {
-        s[key] = Object.assign({}, s[key], action.payload[key])
+        s[key] = Object.assign({}, s[key], payload[key])
       } else {
-        s[key] = action.payload
+        s[key] = payload[key]
       }
       return s
     }, Object.assign({}, state))
