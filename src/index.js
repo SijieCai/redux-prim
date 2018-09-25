@@ -1,3 +1,6 @@
+function getType(x) {
+  return Object.prototype.toString.call(x).replace('object ', '');
+}
 const _updaters = {
   initState({ action, getDefaultState }) {
     return Object.assign({}, getDefaultState(), action.payload)
@@ -8,10 +11,7 @@ const _updaters = {
   mergeState({ state, action }) {
     const payload = action.payload
     return Object.keys(payload).reduce(function(s, key) {
-      if (
-        typeof s[key] === 'object' &&
-        typeof payload[key] === 'object'
-      ) {
+      if (getType(s[key]) === '[Object]' && getType(payload[key]) === '[Object]') {
         s[key] = Object.assign({}, s[key], payload[key])
       } else {
         s[key] = payload[key]
@@ -28,7 +28,7 @@ export var extendUpdaters = function(namedUpdaters) {
 }
 
 function stringify(x) {
-  var type = Object.prototype.toString.call(x).replace('object ', '')
+  var type = getType(x);
   if (['[Number]', '[Boolean]', '[Undefined]'].indexOf(type) > 0) {
     return x
   }
@@ -95,7 +95,11 @@ export function createContractActions(namespace, creator) {
     throw new Error('Expected the creator to be a function.')
   }
   return function(signer, ...args) {
-    if (typeof signer !== 'string' && typeof signer !== 'number' && typeof signer !== 'symbol') {
+    if (
+      typeof signer !== 'string' &&
+      typeof signer !== 'number' &&
+      typeof signer !== 'symbol'
+    ) {
       throw new Error('Expected the signer to be a string , number or symbol.')
     }
     return creator(updaterActionCreators(namespace, signer), ...args)
