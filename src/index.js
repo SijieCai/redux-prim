@@ -75,7 +75,7 @@ function updaterActionCreators(namespace, signer) {
     }
   }
 
-  return {
+  const result = {
     ...Object.keys(_updaters).reduce(function(ret, updaterName) {
       ret[updaterName] = updaterActionCreator(updaterName)
       return ret
@@ -88,6 +88,10 @@ function updaterActionCreators(namespace, signer) {
       }
     }
   }
+  if(signer) {
+    result.signer = signer
+  }
+  return result;
 }
 
 export function createContractActions(namespace, creator) {
