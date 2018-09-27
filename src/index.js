@@ -75,7 +75,7 @@ function updaterActionCreators(namespace, signer) {
     }
   }
 
-  const result = {
+  return {
     ...Object.keys(_updaters).reduce(function(ret, updaterName) {
       ret[updaterName] = updaterActionCreator(updaterName)
       return ret
@@ -88,10 +88,6 @@ function updaterActionCreators(namespace, signer) {
       }
     }
   }
-  if(signer) {
-    result.signer = signer
-  }
-  return result;
 }
 
 export function createContractActions(namespace, creator) {
@@ -106,7 +102,7 @@ export function createContractActions(namespace, creator) {
     ) {
       throw new Error('Expected the signer to be a string , number or symbol.')
     }
-    return creator(updaterActionCreators(namespace, signer), ...args)
+    return Object.assign({}, creator(updaterActionCreators(namespace, signer), ...args), {signer})
   }
 }
 
