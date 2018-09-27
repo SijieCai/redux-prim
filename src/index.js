@@ -21,8 +21,8 @@ const _updaters = {
   }
 }
 
-var _actionTypePrefix = ''
-
+var _actionTypePrefix = '@prim'
+var _signerField = 'signer'
 export var extendUpdaters = function(namedUpdaters) {
   Object.assign(_updaters, namedUpdaters)
 }
@@ -129,14 +129,14 @@ export function createContractReducer(namespace, getDefaultState, reducer) {
 
     if (updaterName) {
       if (
-        state['@signer'] &&
+        state[_signerField] &&
         updaterName !== 'initState' &&
-        state['@signer'] !== signer
+        state[_signerField] !== signer
       ) {
         return state
       }
       if (updaterName === 'initState') {
-        action.payload = Object.assign({ '@signer': signer }, action.payload)
+        action.payload = Object.assign({ [_signerField]: signer }, action.payload)
       }
       return _updaters[updaterName]({
         state,
