@@ -73,7 +73,7 @@ return Object.keys(changes).reduce(function (s, key) {
     Object.prototype.toString.call(changes[key]) === "[object Object]") {
     s[key] = Object.assign({}, s[key], changes[key]);
   } else {
-    s[key] = changes;
+    s[key] = changes[key];
   }
   return s;
 }, Object.assign({}, state));
