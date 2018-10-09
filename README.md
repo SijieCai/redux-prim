@@ -48,7 +48,7 @@ In the example, the first parameter **todo** of `createPrimActions` and `createP
 
 ## Updater
 
-Updater is the most important feature of redux-prim. These functions should represent an abstraction of the data operations, so that we can quickly implement business logic on this abstraction. For example, the `setState` of the above example is a built-in `updater`, and you will find that it generates a `action` that conforms to `SFA` and is processed by the corresponding `reducer` function.
+Updater is the most important feature of redux-prim. These functions should represent an abstraction of the data operations, so that we can quickly implement business logic on this abstraction. For example, the `setState` of the above example is a built-in `updater`, and you will find that it generates a `action` that conforms to `FSA` and is processed by the corresponding `reducer` function.
 
 ```javascript
 {
@@ -179,7 +179,7 @@ You can find the action signature as follows :
 
 ## Redux ecosystem
 
-Redux-prim is essentially a redux architecture. Actions are created in accordance with the `SFA` specification to ensure compatibility with most middleware. If redux-thunk middleware is configured, it can be used normally in `createPrimAction` :
+Redux-prim is essentially a redux architecture. Actions are created in accordance with the `FSA` specification to ensure compatibility with most middleware. If redux-thunk middleware is configured, it can be used normally in `createPrimAction` :
 
 ```javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({

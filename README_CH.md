@@ -46,7 +46,7 @@ combineReducer({
 例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。
 
 ## Updater
-Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 `setState` 就是一个内置的 `updater`，你会发现它生成一个符合 `SFA` 的 `action`，并由对应的 `reducer` 函数处理。
+Updater 是 redux-prim 最重要的特性，它表示对数据操作的一层抽象，这些函数与业务无关，方便我们快速在这个抽象基础上实现业务逻辑。比如上述例子的 `setState` 就是一个内置的 `updater`，你会发现它生成一个符合 `FSA` 的 `action`，并由对应的 `reducer` 函数处理。
 
 ``` javascript
 {
@@ -164,7 +164,7 @@ combineReducer({
 ```
 
 ## redux 生态
-redux-prim 本质还是 redux 架构，action 的创建按照 `SFA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 `createPrimAction` 里面使用：
+redux-prim 本质还是 redux 架构，action 的创建按照 `FSA` 规范保证兼容大部分中间件。假如我们配置了 redux-thunk 中间件，可以正常在 `createPrimAction` 里面使用：
 ``` javascript
 var todoActions = createPrimActions('todo', ({ initState }) => ({
   loadPage(todo) {
