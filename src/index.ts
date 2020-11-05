@@ -1,16 +1,16 @@
-function getType(x) {
+function getType(x: any) {
   return Object.prototype.toString.call(x).replace('object ', '');
 }
 const _updaters = {
-  initState({ action, getDefaultState }) {
-    return Object.assign({}, getDefaultState(), action.payload)
+  initState({ action, getDefaultState }: { action: string, getDefaultState: () => Object }) {
+    return Object.assign({}, getDefaultState(), action.payload);
   },
   setState({ state, action }) {
-    return Object.assign({}, state, action.payload)
+    return Object.assign({}, state, action.payload);
   },
   mergeState({ state, action }) {
     const payload = action.payload
-    return Object.keys(payload).reduce(function(s, key) {
+    return Object.keys(payload).reduce(function (s, key) {
       if (getType(s[key]) === '[Object]' && getType(payload[key]) === '[Object]') {
         s[key] = Object.assign({}, s[key], payload[key])
       } else {
@@ -22,12 +22,11 @@ const _updaters = {
 }
 
 var _actionTypePrefix = '@prim'
-var _signerField = 'signer'
-export var extendUpdaters = function(namedUpdaters) {
+export var extendUpdaters = function (namedUpdaters: { [name: string]: Function }) {
   Object.assign(_updaters, namedUpdaters)
 }
 
-function stringify(x) {
+function stringify(x: any) {
   var type = getType(x);
   if (['[Number]', '[Boolean]', '[Undefined]'].indexOf(type) > 0) {
     return x
@@ -49,7 +48,7 @@ function querify(payload, intend) {
   return payloadStr
 }
 
-function updaterActionCreators(namespace, signer) {
+function updaterActionCreators(namespace) {
   function getMeta(updaterName) {
     var m = {
       isPrimAction: true,
@@ -62,11 +61,9 @@ function updaterActionCreators(namespace, signer) {
     return m
   }
   var ns = namespace
-  if (signer) {
-    ns = `${namespace}/${signer}`
-  }
+
   function updaterActionCreator(name) {
-    return function(payload, intend) {
+    return function (payload, intend) {
       return {
         type: `${_actionTypePrefix}/${ns}/${name}/?${querify(payload, intend)}`,
         payload,
@@ -76,7 +73,7 @@ function updaterActionCreators(namespace, signer) {
   }
 
   return {
-    ...Object.keys(_updaters).reduce(function(ret, updaterName) {
+    ...Object.keys(_updaters).reduce(function (ret, updaterName) {
       ret[updaterName] = updaterActionCreator(updaterName)
       return ret
     }, {}),
@@ -94,7 +91,7 @@ export function createContractActions(namespace, creator) {
   if (typeof creator !== 'function') {
     throw new Error('Expected the creator to be a function.')
   }
-  return function(signer, ...args) {
+  return function (signer, ...args) {
     if (
       typeof signer !== 'string' &&
       typeof signer !== 'number' &&
@@ -102,11 +99,11 @@ export function createContractActions(namespace, creator) {
     ) {
       throw new Error('Expected the signer to be a string , number or symbol.')
     }
-    return Object.assign({}, creator(updaterActionCreators(namespace, signer), ...args), {signer})
+    return Object.assign({}, creator(updaterActionCreators(namespace, signer), ...args), { signer })
   }
 }
 
-export function createPrimActions(namespace, creator) {
+export function createPrimActions(namespace: string, creator) {
   if (typeof creator !== 'function') {
     throw new Error('Expected the creator to be a function.')
   }
@@ -121,41 +118,9 @@ function isMatchedAction(action, namespace) {
   return meta.isPrimAction && meta.namespace === namespace
 }
 
-export function createContractReducer(namespace, getDefaultState, reducer) {
-  return function(state = getDefaultState(), action) {
-    if (!isMatchedAction(action, namespace)) return state
-
-    var { updaterName, signer } = action.meta
-
-    if (updaterName) {
-      if (
-        state[_signerField] &&
-        updaterName !== 'initState' &&
-        state[_signerField] !== signer
-      ) {
-        return state
-      }
-      if (updaterName === 'initState') {
-        action.payload = Object.assign({ [_signerField]: signer }, action.payload)
-      }
-      return _updaters[updaterName]({
-        state,
-        action,
-        getDefaultState
-      })
-    }
-
-    if (!reducer) {
-      throw new Error(
-        `reducer function is not defined in createContractReducer("${namespace}", getDefaultState, reducer)`
-      )
-    }
-    return reducer(state, action.payload, getDefaultState)
-  }
-}
 
 export function createPrimReducer(namespace, getDefaultState, reducer) {
-  return function(state = getDefaultState(), action) {
+  return function (state = getDefaultState(), action) {
     if (!isMatchedAction(action, namespace)) return state
 
     var { updaterName } = action.meta
