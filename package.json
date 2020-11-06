@@ -14,7 +14,8 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "start": "npx ts-node ./src/index.ts"
   },
   "repository": {
     "type": "git",

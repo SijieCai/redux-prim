@@ -1,11 +1,10 @@
 {
     "compilerOptions": {
-        "module": "system",
+        "module": "None",
         "target": "ES2015",
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outFile": "./lib/redux-prim.js",
         "sourceMap": true
     },
     "include": [
