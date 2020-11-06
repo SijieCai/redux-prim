@@ -17,7 +17,7 @@ interface PrimUpdaterImpls<T extends Dictionary> {
 }
 interface PrimUpdaters<T extends Dictionary> {
   initState: (p: Dictionary) => PrimAction<T>,
-  setState: (p: Dictionary | ((s: T) => Dictionary)) => PrimAction<T>,
+  setState: (p: Dictionary | ((s: Readonly<T>) => Dictionary)) => PrimAction<T>,
   mergeState: (p: Dictionary) => PrimAction<T>
 }
 var _actionTypePrefix = '@prim'
@@ -83,7 +83,7 @@ function isMatchedAction<T>(action: PrimAction<T>, namespace: string) {
   return meta.isPrimAction && meta.namespace === namespace
 }
 
-export function createPrimActions<T extends { [key: string]: (...args: any) => any }, P extends Dictionary>(
+export function createPrimActions<T extends { [key: string]: (...args: any) => PrimAction<P> | ((dispatch: ((action: PrimAction<P>) => void)) => void) }, P extends Dictionary>(
   namespace: string,
   getDefaultState: () => P,
   creator: (updaters: PrimUpdaters<P>) => T
@@ -105,14 +105,14 @@ export function createPrimActions<T extends { [key: string]: (...args: any) => a
       },
       setState({ state, action }) {
         if (typeof action.payload === 'function') {
-          let reducer = action.payload as ((s: T) => Dictionary);
+          let reducer = action.payload as ((s: P) => Dictionary);
           return reducer(state);
         }
         return Object.assign({}, state, action.payload);
       },
       mergeState({ state, action }) {
         const payload = action.payload
-        return Object.keys(payload).reduce(function (s, key: string) {
+        return Object.keys(payload).reduce(function (s: Dictionary, key: string) {
           if (getType(s[key]) === '[Object]' && getType(payload[key]) === '[Object]') {
             s[key] = Object.assign({}, s[key], payload[key])
           } else {
@@ -135,10 +135,10 @@ export function createPrimActions<T extends { [key: string]: (...args: any) => a
       )
     }
   }
-  return { actions, reducer };
+  return { actions, reducer, select: (state: Dictionary): P => state[namespace] };
 }
 
-var todoActions = createPrimActions('todo',
+var { actions, reducer, select } = createPrimActions('todo',
   () => ({
     value1: '',
     value2: 123,
@@ -146,11 +146,26 @@ var todoActions = createPrimActions('todo',
   }),
   ({ setState }) => {
     return {
-      complexAction(data: Dictionary) {
-        return setState(state => ({ ...state }))
+      setName(name) {
+        return setState({ name });
+      },
+      getUserInfo(id) {
+        return (dispatch) => {
+          setTimeout(() => {
+            dispatch(setState({ userInfo: 'user info' }))
+            dispatch(actions.setName('xxx'));
+          }, 10);
+        }
       }
     }
   }
 );
 
-console.log(todoActions);
+let a = actions.setName('user name');
+
+actions.getUserInfo('123');
+
+var result = reducer(undefined, a);
+
+console.log(result);
+
