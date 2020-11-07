@@ -83,7 +83,7 @@ function isMatchedAction<T>(action: PrimAction<T>, namespace: string) {
   return meta.isPrimAction && meta.namespace === namespace
 }
 
-export function createPrimActions<T extends { [key: string]: (...args: any) => PrimAction<P> | ((dispatch: ((action: PrimAction<P>) => void)) => void) }, P extends Dictionary>(
+export function createSlice<T extends { [key: string]: (...args: any) => PrimAction<P> | ((dispatch: ((action: PrimAction<P>) => void)) => void) }, P extends Dictionary>(
   namespace: string,
   getDefaultState: () => P,
   creator: (updaters: PrimUpdaters<P>) => T
@@ -97,7 +97,7 @@ export function createPrimActions<T extends { [key: string]: (...args: any) => P
   const reducer = (state: P = getDefaultState(), action: PrimAction<P>): any => {
     if (!isMatchedAction(action, namespace)) return state
 
-    var { updaterName } = action.meta
+    var { updaterName } = action.meta as PrimMeta<P>;
 
     const _updaters: PrimUpdaterImpls<P> = {
       initState({ action, getDefaultState }) {
@@ -135,37 +135,6 @@ export function createPrimActions<T extends { [key: string]: (...args: any) => P
       )
     }
   }
-  return { actions, reducer, select: (state: Dictionary): P => state[namespace] };
+
+  return { actions, reducer, selector: (state: Dictionary): P => state[namespace] };
 }
-
-var { actions, reducer, select } = createPrimActions('todo',
-  () => ({
-    value1: '',
-    value2: 123,
-    value3: []
-  }),
-  ({ setState }) => {
-    return {
-      setName(name) {
-        return setState({ name });
-      },
-      getUserInfo(id) {
-        return (dispatch) => {
-          setTimeout(() => {
-            dispatch(setState({ userInfo: 'user info' }))
-            dispatch(actions.setName('xxx'));
-          }, 10);
-        }
-      }
-    }
-  }
-);
-
-let a = actions.setName('user name');
-
-actions.getUserInfo('123');
-
-var result = reducer(undefined, a);
-
-console.log(result);
-
