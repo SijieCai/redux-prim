@@ -1,17 +1,9 @@
 {
     "compilerOptions": {
-        "module": "None",
-        "target": "ES2015",
+        "target":"ES2015",
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "sourceMap": true
-    },
-    "include": [
-        "src/index.ts"
-    ],
-    "exclude": [
-        "node_modules",
-        "**/*.spec.ts"
-    ]
+        "sourceMap": true,
+    }
 }
