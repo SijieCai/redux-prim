@@ -16,7 +16,7 @@ interface PrimUpdaterImpls<T extends Dictionary> {
   mergeState: (p: UpdateParam<T>) => Dictionary
 }
 interface PrimUpdaters<T extends Dictionary> {
-  initState: (p: Dictionary) => PrimAction<T>,
+  initState: (p?: Dictionary) => PrimAction<T>,
   setState: (p: Dictionary | ((s: Readonly<T>) => Dictionary)) => PrimAction<T>,
   mergeState: (p: Dictionary) => PrimAction<T>
 }
@@ -97,7 +97,7 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
   const actions = creator(updaterActionCreators<P>(namespace));
 
   const reducer = {
-    [namespace]: (state: P = getDefaultState(), action: PrimAction<P>): any => {
+    [namespace]: (state: P = getDefaultState(), action?: PrimAction<P>): any => {
       if (!isMatchedAction(action, namespace)) return state
 
       const { updaterName } = action.meta as PrimMeta<P>;
