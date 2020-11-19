@@ -76,11 +76,8 @@ function updaterActionCreators<T>(namespace: string): PrimUpdaters<T> {
 
 
 function isMatchedAction<T>(action: PrimAction<T>, namespace: string) {
-  const meta = action.meta
-  if (!meta || Object.prototype.toString.call(meta) !== '[object Object]') {
-    return false
-  }
-  return meta.isPrimAction && meta.namespace === namespace
+  const meta = action?.meta;
+  return meta?.isPrimAction && meta?.namespace === namespace;
 }
 
 
@@ -97,7 +94,7 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
   const actions = creator(updaterActionCreators<P>(namespace));
 
   const reducer = {
-    [namespace]: (state: P = getDefaultState(), action?: PrimAction<P>): any => {
+    [namespace]: (state: Dictionary = getDefaultState(), action?: PrimAction<P>): any => {
       if (!isMatchedAction(action, namespace)) return state
 
       const { updaterName } = action.meta as PrimMeta<P>;
@@ -127,7 +124,7 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
       }
       if (updaterName) {
         return _updaters[updaterName]({
-          state,
+          state: state as P,
           action,
           getDefaultState
         })
