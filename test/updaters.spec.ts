@@ -1,4 +1,4 @@
-import createSlice from '../src/index';
+import createSlice from '../src/redux-prim';
 import { expect } from 'chai';
 
 const slice = createSlice('slice',
