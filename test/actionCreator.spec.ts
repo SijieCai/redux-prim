@@ -21,7 +21,7 @@ const slice = createSlice('slice',
 
 const { actions } = slice;
 
-describe('updater function should return correct action', () => {
+describe('action creator function should return correct action', () => {
   it('setState should return correct action', () => {
     let action = actions.setStateAction({ prop1: 'new value' });
     expect(action).to.have.all.keys('type', 'payload', 'meta');

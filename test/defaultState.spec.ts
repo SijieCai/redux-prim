@@ -19,8 +19,8 @@ describe('default state', () => {
     })
   });
 
-  it('should accept and merge the params state obj', ()=>{
-    const state = {someProp: 'value'};
+  it('should accept and merge the params state obj', () => {
+    const state = { someProp: 'value' };
     const newState = reducer.slice(state);
     expect(newState).to.equal(state);
   })
