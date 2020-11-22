@@ -12,35 +12,65 @@ redux-prim 是一个 redux 的辅助开发工具，其完全遵循 redux 架构�
 
 这种抽象更符合人脑对数据的理解，并且支持自定义 updater 实现代码复用。在这个抽象层之下，redux-prim 会按照 redux 的方式来实现，我们仍然可以使用 redux 生态里的工具链。
 
-更多的，redux-prim 提供接口帮助实现**数据契约式设计**。
+redux-prim@2 版本去除了一些复杂的设计理念，更加聚焦在减少模式代码本身，并更好的支持 TypeScript。完整例子参考
+[redux-prim example]](https://github.com/sijiecai/redux-prim-example).
 
 
 ## 安装
 
 ```shell
 npm i redux-prim 
-```
-## 简单例子
-``` javascript
-import { createPrimActions, createPrimReducer } from 'redux-prim';
 
-var todoActions = createPrimActions('todo', ({ setState }) => {
+```
+
+## 简单例子
+
+创建一个 todo slice
+``` javascript
+import createSlice from 'redux-prim';
+
+const {actions, reducer, selector} = createSlice('todo',
+()=>({ visible: false }),
+({ setState }) => {
   return {
     setTodoVisibility(todoVisible) {
       return setState({ todoVisible });
     }
   }
-} );
-
-combineReducer({
-  todo: createPrimReducer('todo', function getDefaultState() {
-    return { todoVisible: false };
-  })
-})
+});
 
 ```
 
-不需要 middleware 配置，不需要定义 action 和 reducer。
+Reducers
+``` javascript
+import { combineReducers } from 'redux';
+import { userReducer } from './userSlice';
+import { appReducer } from './appSlice';
+
+export default combineReducers({
+  ...userReducer,
+  ...appReducer
+});
+```
+
+使用slice
+``` javascript
+import React, { useCallback } from 'react'; 
+import todoSlice from './store/todoSlice';
+import { useSelector, useDispatch } from 'react-redux';
+const { actions, selector } = todoSlice;
+
+function App() {
+  const todo = useSelector(selector);
+  const dispatch = useDispatch();
+  const showTodo = useCallback(() => dispatch(actions.setTodoVisibility(true)), []); 
+  return (
+    <div>
+      {todo.visible ? <div>this is todo</div> : <button onClick={showTodo}>show todo</button>}
+    </div>
+  )
+}
+```
 
 ## Namespace
 例子中 `createPrimActions` 和 `createPrimReducer` 的第一个参数必填参数 **todo** 是命名空间，同一命名空间的 actions 和 reducers 是配套的，它是 redux-prim 实现其它特性的基础。

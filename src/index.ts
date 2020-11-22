@@ -30,7 +30,7 @@ function stringify(x: any) {
   return type
 }
 
-function querify(payload: Dictionary) {
+function querify(payload: Dictionary = {}) {
   const payloadStr = stringify(payload)
   if (payloadStr === '[Object]') {
     return Object.keys(payload)
@@ -51,31 +51,29 @@ function updaterActionCreators<T>(namespace: string): PrimUpdaters<T> {
   }
   const ns = namespace
 
-  function updaterActionCreator(updaterName: keyof PrimUpdaterImpls<T>) {
-    return function (payload: Dictionary): PrimAction<T> {
-      return {
-        type: `${_actionTypePrefix}/${ns}/${updaterName}/?${querify(payload)}`,
-        payload,
-        meta: getMeta(updaterName)
-      }
+  function createAction(updaterName: keyof PrimUpdaterImpls<T>, payload?: Dictionary): PrimAction<T> {
+    return {
+      type: `${_actionTypePrefix}/${ns}/${updaterName}/?${querify(payload)}`,
+      payload,
+      meta: getMeta(updaterName)
     }
   }
 
   return {
-    initState: updaterActionCreator('initState'),
-    setState: function (payload: Dictionary | ((state: T) => Dictionary)): PrimAction<T> {
-      return {
-        type: `${_actionTypePrefix}/${ns}/${'setState'}/?${querify(payload)}`,
-        payload,
-        meta: getMeta('setState')
-      }
+    initState: (state?: Dictionary): PrimAction<T> => {
+      return createAction('initState', state);
     },
-    mergeState: updaterActionCreator('mergeState')
+    setState: (payload: Dictionary | ((state: T) => Dictionary)): PrimAction<T> => {
+      return createAction('setState', payload);
+    },
+    mergeState: (payload: Dictionary) => {
+      return createAction('mergeState', payload);
+    }
   }
 }
 
 
-function isMatchedAction<T>(action: PrimAction<T>, namespace: string) {
+function isMatchedAction<T>(namespace: string, action?: PrimAction<T>) {
   const meta = action?.meta;
   return meta?.isPrimAction && meta?.namespace === namespace;
 }
@@ -95,9 +93,9 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
 
   const reducer = {
     [namespace]: (state: Dictionary = getDefaultState(), action?: PrimAction<P>): any => {
-      if (!isMatchedAction(action, namespace)) return state
+      if (!isMatchedAction(namespace, action)) return state
 
-      const { updaterName } = action.meta as PrimMeta<P>;
+      const { updaterName } = action?.meta as PrimMeta<P>;
 
       const _updaters: PrimUpdaterImpls<P> = {
         initState({ action, getDefaultState }) {
@@ -125,7 +123,7 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
       if (updaterName) {
         return _updaters[updaterName]({
           state: state as P,
-          action,
+          action: action as PrimAction<P>,
           getDefaultState
         })
       }
