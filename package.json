@@ -2,19 +2,14 @@
   "name": "redux-prim",
   "version": "0.1.7",
   "description": "redux helper tool to abstract action and reducer with getDefaultState and updaters.",
-  "main": "lib/redux-prim.js",
-  "unpkg": "dist/redux-prim.js",
-  "module": "es/redux-prim.js",
-  "typings": "./index.d.ts",
+  "main": "dist/redux-prim.js",
+  "typings": "dist/redux-prim.d.ts",
   "files": [
     "dist",
-    "lib",
-    "es",
-    "src",
-    "index.d.ts"
+    "src"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "npx ts-node ./src/index.ts",
     "test": "cross-env TS_NODE_FILES=true mocha ./test/*",
     "coverage": "nyc npm run test"
