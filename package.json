@@ -1,6 +1,6 @@
 {
   "name": "redux-prim",
-  "version": "0.1.7",
+  "version": "1.0.0",
   "description": "redux helper tool to abstract action and reducer with getDefaultState and updaters.",
   "main": "dist/redux-prim.js",
   "typings": "dist/redux-prim.d.ts",
