@@ -44,12 +44,10 @@ const {actions, reducer, selector} = createSlice('todo',
 Reducers
 ``` javascript
 import { combineReducers } from 'redux';
-import { userReducer } from './userSlice';
-import { appReducer } from './appSlice';
+import todoSlice from './todoSlice';
 
 export default combineReducers({
-  ...userReducer,
-  ...appReducer
+  ...todoSlice.reducer
 });
 ```
 
