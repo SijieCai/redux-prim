@@ -1,0 +1,14 @@
+language: node_js
+node_js:
+  - "14"
+sudo: enabled
+before_install:
+insatll:
+  - npm install
+cache:
+  npm: true
+script: 
+  - npm install codecov -g
+  - npm run coverage
+after_success:
+  - codecov

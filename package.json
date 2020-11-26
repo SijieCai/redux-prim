@@ -14,7 +14,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "npx ts-node ./src/index.ts",
     "test": "cross-env TS_NODE_FILES=true mocha ./test/*",
-    "coverage": "nyc npm run test",
+    "coverage": "npm run build && nyc npm run test",
     "prepublish": "npm run test && npm run build"
   },
   "repository": {

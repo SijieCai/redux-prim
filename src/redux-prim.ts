@@ -24,21 +24,16 @@ const _actionTypePrefix = '@prim'
 
 function stringify(x: any) {
   const type = getType(x);
-  if (['[Number]', '[Boolean]', '[Undefined]'].indexOf(type) > 0) {
-    return x
+  if (['[Null]', '[Undefined]', '[Number]', '[Boolean]'].indexOf(type) >= 0) {
+    return x;
   }
   return type
 }
 
 function querify(payload: Dictionary = {}) {
-  const payloadStr = stringify(payload)
-  if (payloadStr === '[Object]') {
-    return Object.keys(payload)
-      .map(key => `${key}=${stringify(payload[key])}`)
-      .join('&')
-  }
-
-  return payloadStr
+  return Object.keys(payload)
+    .map(key => `${key}=${stringify(payload[key])}`)
+    .join('&')
 }
 
 function updaterActionCreators<T>(namespace: string): PrimUpdaters<T> {
@@ -51,23 +46,31 @@ function updaterActionCreators<T>(namespace: string): PrimUpdaters<T> {
   }
   const ns = namespace
 
-  function createAction(updaterName: keyof PrimUpdaterImpls<T>, payload?: Dictionary): PrimAction<T> {
+  function createAction(payloadNotValid: boolean, updaterName: keyof PrimUpdaterImpls<T>, payload?: Dictionary): PrimAction<T> {
+    if (payloadNotValid) {
+      throw new Error(`Unexpected ${updaterName} payload type ${Object.prototype.toString.call(payload)}`)
+    }
     return {
       type: `${_actionTypePrefix}/${ns}/${updaterName}/?${querify(payload)}`,
       payload,
       meta: getMeta(updaterName)
     }
   }
+ 
 
   return {
-    initState: (state?: Dictionary): PrimAction<T> => {
-      return createAction('initState', state);
+    initState: (payload?: Dictionary): PrimAction<T> => {
+      const payloadNotValid = payload !== undefined && getType(payload) !== '[Object]';
+      return createAction(payloadNotValid, 'initState', payload);
     },
     setState: (payload: Dictionary | ((state: T) => Dictionary)): PrimAction<T> => {
-      return createAction('setState', payload);
+      const type = getType(payload);
+      const payloadNotValid = type !== '[Object]' && type !== '[Function]';
+      return createAction(payloadNotValid, 'setState', payload);
     },
     mergeState: (payload: Dictionary) => {
-      return createAction('mergeState', payload);
+      const payloadNotValid = getType(payload) !== '[Object]';
+      return createAction(payloadNotValid, 'mergeState', payload);
     }
   }
 }
@@ -85,10 +88,6 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
   getDefaultState: () => P,
   creator: (updaters: PrimUpdaters<P>) => T
 ) {
-  if (typeof creator !== 'function') {
-    throw new Error('Expected the creator to be a function.');
-  }
-
   const actions = creator(updaterActionCreators<P>(namespace));
 
   const reducer = {
@@ -126,11 +125,6 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
           action: action as PrimAction<P>,
           getDefaultState
         })
-      }
-      if (!reducer) {
-        throw new Error(
-          `reducer function is not defined in createPrimReducer("${namespace}", getDefaultState, reducer)`
-        )
       }
     }
   };
