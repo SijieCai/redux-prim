@@ -83,7 +83,7 @@ function isMatchedAction<T>(namespace: string, action?: PrimAction<T>) {
 
 
 type ThunkCallback<T> = (dispatch: ((action: PrimAction<T>) => void), getState: () => Dictionary) => void;
-export default function createSlice<T extends { [key: string]: (...args: any) => PrimAction<P> | ThunkCallback<P> }, P extends Dictionary>(
+export function createSlice<T extends { [key: string]: (...args: any) => PrimAction<P> | ThunkCallback<P> }, P extends Dictionary>(
   namespace: string,
   getDefaultState: () => P,
   creator: (updaters: PrimUpdaters<P>) => T
@@ -131,3 +131,5 @@ export default function createSlice<T extends { [key: string]: (...args: any) =>
 
   return { actions, reducer, selector: (state: Dictionary): P => state[namespace] };
 }
+
+export default createSlice;

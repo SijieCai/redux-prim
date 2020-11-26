@@ -1,6 +1,6 @@
 [![APMLicense](https://img.shields.io/apm/l/vim-mode.svg)](https://github.com/SijieCai/redux-prim)
 [![Build Status](https://travis-ci.org/SijieCai/redux-prim.svg?branch=master)](https://travis-ci.org/SijieCai/redux-prim)
-[![codecov](https://codecov.io/gh/SijieCai/ts-class-validator/branch/master/graph/badge.svg)](https://codecov.io/gh/SijieCai/redux-prim)
+[![codecov](https://codecov.io/gh/SijieCai/redux-prim/branch/master/graph/badge.svg)](https://codecov.io/gh/SijieCai/redux-prim)
 
 
 # redux-prim
